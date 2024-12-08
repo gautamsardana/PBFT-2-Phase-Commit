@@ -1,0 +1,18 @@
+{
+  "port": "8000",
+  "server_addresses": [
+    "localhost:8081",
+    "localhost:8082",
+    "localhost:8083",
+    "localhost:8084",
+    "localhost:8085",
+    "localhost:8086",
+    "localhost:8087",
+    "localhost:8088",
+    "localhost:8089"
+  ],
+  "clusters": 3,
+  "cluster_size": 3,
+  "total_users": 3000,
+  "db_dsn": "root@tcp(localhost:3306)/lab3_%d?parseTime=true"
+}

@@ -1,0 +1,114 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+
+package common;
+
+option go_package = "/";
+
+service Byz2PC {
+  rpc UpdateServerState(common.UpdateServerStateRequest) returns (google.protobuf.Empty);
+  rpc Callback(common.ProcessTxnResponse) returns (google.protobuf.Empty);
+
+  rpc ProcessTxnSet(common.TxnSet) returns (google.protobuf.Empty);
+
+  rpc PrePrepare(common.PBFTRequestResponse) returns (common.PBFTRequestResponse);
+  rpc Prepare(common.PBFTRequestResponse) returns (common.PBFTRequestResponse);
+
+  rpc TwoPCCommit(common.TxnRequest) returns (common.ProcessTxnResponse);
+  rpc TwoPCAbort(common.TxnRequest) returns (common.ProcessTxnResponse);
+
+  rpc Performance(google.protobuf.Empty) returns (PerformanceResponse);
+  rpc PrintBalance(PrintBalanceRequest) returns (PrintBalanceResponse);
+  rpc PrintDB(PrintDBRequest) returns (PrintDBResponse);
+}
+
+message ClusterDistribution {
+  repeated int32 Values = 1;
+}
+
+message UpdateServerStateRequest{
+  bool IsAlive = 1;
+  int32 ClusterNumber = 2;
+  int32 DataItemsPerShard = 3;
+  map<int32, ClusterDistribution> Clusters = 4;
+}
+
+message TxnSet {
+  int32 SetNo = 1;
+  repeated TxnRequest Txns = 2;
+  repeated string LiveServers = 3;
+  repeated string ContactServers = 4;
+}
+
+message TxnRequest {
+  string TxnID = 1;
+  int32 Sender = 2;
+  int32 Receiver = 3;
+  float Amount = 4;
+  int32 SeqNo = 5;
+  int32 ViewNo = 6;
+  string Type = 7;
+  string Status = 8;
+  string digest = 9;
+  string Error = 10;
+}
+
+message ProcessTxnResponse {
+  TxnRequest Txn = 1;
+  string Status = 2;
+  string Error = 3;
+}
+
+message SignedMessage  {
+  int32 ViewNumber = 1;
+  int32 SequenceNumber = 2 ;
+  string Digest = 3;
+}
+
+message PBFTRequestResponse{
+  bytes SignedMessage = 1;
+  bytes Sign = 2;
+  bytes TxnRequest = 3;
+  int32 ServerNo = 4;
+}
+
+
+message PBFTMessage{
+  string TxnID = 1;
+  string MessageType = 2;
+  int32 Sender = 3;
+  string Sign = 4;
+  string Payload = 5;
+  google.protobuf.Timestamp CreatedAt = 6;
+}
+
+message Certificate {
+  int32 ViewNumber = 1;
+  int32 SequenceNumber = 2 ;
+  repeated PBFTMessage Messages = 3;
+}
+
+message PerformanceResponse{
+  google.protobuf.Duration Latency = 1;
+  float Throughput = 2;
+}
+
+message PrintBalanceRequest{
+  int32 Server = 1;
+  int32 User = 2;
+}
+
+message PrintBalanceResponse{
+  map<int32, float> Balance = 1;
+}
+
+message PrintDBRequest{
+  int32 Server = 1;
+}
+
+message PrintDBResponse{
+  repeated TxnRequest Txns = 1;
+}

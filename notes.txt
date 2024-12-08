@@ -1,0 +1,12 @@
+1. Run proto file -
+    protoc --go_out=. --go-grpc_out=. common.proto
+
+
+CREATE TABLE PBFT_Messages (
+    txn_id PRIMARY KEY,                  -- Unique ID for the message
+    message_type VARCHAR(20) NOT NULL,      -- Type of message (e.g., "PREPARE", "ACCEPT")
+    sender VARCHAR(255) NOT NULL,        -- ID of the sender (e.g., node ID or public key)
+    sign TEXT NOT NULL,                -- RSA signature for the message
+    payload JSONB NOT NULL,                 -- Message content (e.g., hash, timestamp)
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

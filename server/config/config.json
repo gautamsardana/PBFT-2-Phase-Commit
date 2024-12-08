@@ -1,0 +1,20 @@
+{
+  "base_port": 8080,
+  "majority": 3,
+  "db_dsn": "root@tcp(localhost:3306)/lab3_%d?parseTime=true",
+  "server_addresses": [
+    "localhost:8000",
+    "localhost:8081",
+    "localhost:8082",
+    "localhost:8083",
+    "localhost:8084",
+    "localhost:8085",
+    "localhost:8086",
+    "localhost:8087",
+    "localhost:8088",
+    "localhost:8089",
+    "localhost:8090",
+    "localhost:8091",
+    "localhost:8092"
+  ]
+}
