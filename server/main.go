@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 
+	common "GolandProjects/2pcbyz-gautamsardana/api_common"
 	"GolandProjects/2pcbyz-gautamsardana/server/api"
 	"GolandProjects/2pcbyz-gautamsardana/server/config"
 )
@@ -25,7 +26,7 @@ func ListenAndServe(conf *config.Config) {
 		panic(err)
 	}
 	s := grpc.NewServer()
-	common.RegisterPaxos2PCServer(s, &api.Server{Config: conf})
+	common.RegisterByz2PCServer(s, &api.Server{Config: conf})
 	fmt.Printf("gRPC server running on port %v...\n", conf.Port)
 	if err = s.Serve(lis); err != nil {
 		log.Fatal(err)

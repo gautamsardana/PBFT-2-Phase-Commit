@@ -25,6 +25,7 @@ const (
 	Byz2PC_ProcessTxnSet_FullMethodName     = "/common.Byz2PC/ProcessTxnSet"
 	Byz2PC_PrePrepare_FullMethodName        = "/common.Byz2PC/PrePrepare"
 	Byz2PC_Prepare_FullMethodName           = "/common.Byz2PC/Prepare"
+	Byz2PC_Commit_FullMethodName            = "/common.Byz2PC/Commit"
 	Byz2PC_TwoPCCommit_FullMethodName       = "/common.Byz2PC/TwoPCCommit"
 	Byz2PC_TwoPCAbort_FullMethodName        = "/common.Byz2PC/TwoPCAbort"
 	Byz2PC_Performance_FullMethodName       = "/common.Byz2PC/Performance"
@@ -41,6 +42,7 @@ type Byz2PCClient interface {
 	ProcessTxnSet(ctx context.Context, in *TxnSet, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	PrePrepare(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*PBFTRequestResponse, error)
 	Prepare(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*PBFTRequestResponse, error)
+	Commit(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	TwoPCCommit(ctx context.Context, in *TxnRequest, opts ...grpc.CallOption) (*ProcessTxnResponse, error)
 	TwoPCAbort(ctx context.Context, in *TxnRequest, opts ...grpc.CallOption) (*ProcessTxnResponse, error)
 	Performance(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PerformanceResponse, error)
@@ -106,6 +108,16 @@ func (c *byz2PCClient) Prepare(ctx context.Context, in *PBFTRequestResponse, opt
 	return out, nil
 }
 
+func (c *byz2PCClient) Commit(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, Byz2PC_Commit_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *byz2PCClient) TwoPCCommit(ctx context.Context, in *TxnRequest, opts ...grpc.CallOption) (*ProcessTxnResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ProcessTxnResponse)
@@ -165,6 +177,7 @@ type Byz2PCServer interface {
 	ProcessTxnSet(context.Context, *TxnSet) (*emptypb.Empty, error)
 	PrePrepare(context.Context, *PBFTRequestResponse) (*PBFTRequestResponse, error)
 	Prepare(context.Context, *PBFTRequestResponse) (*PBFTRequestResponse, error)
+	Commit(context.Context, *PBFTRequestResponse) (*emptypb.Empty, error)
 	TwoPCCommit(context.Context, *TxnRequest) (*ProcessTxnResponse, error)
 	TwoPCAbort(context.Context, *TxnRequest) (*ProcessTxnResponse, error)
 	Performance(context.Context, *emptypb.Empty) (*PerformanceResponse, error)
@@ -194,6 +207,9 @@ func (UnimplementedByz2PCServer) PrePrepare(context.Context, *PBFTRequestRespons
 }
 func (UnimplementedByz2PCServer) Prepare(context.Context, *PBFTRequestResponse) (*PBFTRequestResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Prepare not implemented")
+}
+func (UnimplementedByz2PCServer) Commit(context.Context, *PBFTRequestResponse) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Commit not implemented")
 }
 func (UnimplementedByz2PCServer) TwoPCCommit(context.Context, *TxnRequest) (*ProcessTxnResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TwoPCCommit not implemented")
@@ -321,6 +337,24 @@ func _Byz2PC_Prepare_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Byz2PC_Commit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PBFTRequestResponse)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(Byz2PCServer).Commit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Byz2PC_Commit_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(Byz2PCServer).Commit(ctx, req.(*PBFTRequestResponse))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Byz2PC_TwoPCCommit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(TxnRequest)
 	if err := dec(in); err != nil {
@@ -437,6 +471,10 @@ var Byz2PC_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Prepare",
 			Handler:    _Byz2PC_Prepare_Handler,
+		},
+		{
+			MethodName: "Commit",
+			Handler:    _Byz2PC_Commit_Handler,
 		},
 		{
 			MethodName: "TwoPCCommit",

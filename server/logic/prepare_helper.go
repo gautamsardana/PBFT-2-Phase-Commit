@@ -1,14 +1,14 @@
 package logic
 
 import (
-	"GolandProjects/2pcbyz-gautamsardana/server/storage/datastore"
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 
 	common "GolandProjects/2pcbyz-gautamsardana/api_common"
 	"GolandProjects/2pcbyz-gautamsardana/server/config"
-	"encoding/json"
-	"errors"
+	"GolandProjects/2pcbyz-gautamsardana/server/storage/datastore"
 )
 
 func SendPrepareResponse(conf *config.Config, req *common.PBFTRequestResponse, txnRequest *common.TxnRequest) (*common.PBFTRequestResponse, error) {
@@ -57,30 +57,30 @@ func VerifyPrepare(ctx context.Context, conf *config.Config, req *common.PBFTReq
 		return err
 	}
 
-	validPrepareCount := int32(0)
-	for _, prepareRequest := range cert.Messages {
+	validPrePrepareCount := int32(0)
+	for _, prePrepareMessage := range cert.Messages {
 		verifyReq := &common.PBFTRequestResponse{
-			SignedMessage: []byte(prepareRequest.Payload),
-			Sign:          []byte(prepareRequest.Sign),
-			ServerNo:      prepareRequest.Sender,
+			SignedMessage: []byte(prePrepareMessage.Payload),
+			Sign:          []byte(prePrepareMessage.Sign),
+			ServerNo:      prePrepareMessage.Sender,
 		}
 
-		err = VerifyPrePrepare(ctx, conf, verifyReq, txnReq)
+		err = VerifyPBFTMessage(ctx, conf, verifyReq, txnReq, MessageTypePrepare)
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
-		validPrepareCount++
+		validPrePrepareCount++
 	}
 
-	if validPrepareCount < conf.Majority {
-		return errors.New("not enough valid prepares")
+	if validPrePrepareCount < conf.Majority {
+		return errors.New("not enough valid pre-prepares")
 	}
 
 	return nil
 }
 
-func AddPrepareMessages(conf *config.Config, req *common.PBFTRequestResponse) error {
+func AddPrePrepareMessages(conf *config.Config, req *common.PBFTRequestResponse) error {
 	cert := &common.Certificate{}
 	err := json.Unmarshal(req.SignedMessage, cert)
 	if err != nil {

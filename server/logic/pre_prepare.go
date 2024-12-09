@@ -42,6 +42,17 @@ func SendPrePrepare(conf *config.Config, req *common.TxnRequest) error {
 		ServerNo:      conf.ServerNumber,
 	}
 
+	dbTxn, err := datastore.GetTransactionByTxnID(conf.DataStore, req.TxnID)
+	if err != nil {
+		return err
+	}
+
+	dbTxn.Status = StatusPrePrepared
+	err = datastore.UpdateTransactionStatus(conf.DataStore, dbTxn)
+	if err != nil {
+		return err
+	}
+
 	//todo: send context with a timeout? Handle timeouts in some way (if majority not reached)
 
 	var wg sync.WaitGroup
@@ -74,7 +85,7 @@ func ReceivePrePrepare(ctx context.Context, conf *config.Config, req *common.PBF
 	//todo: check if txn already exists? any scenario where i
 	// already have in my db but i get another prepare?
 
-	fmt.Printf("Received PrePrepare with request: %v\n", req)
+	fmt.Printf("Received PrePrepare for request: %v\n", req)
 
 	if !conf.IsAlive {
 		return nil, errors.New("server dead")
@@ -86,13 +97,13 @@ func ReceivePrePrepare(ctx context.Context, conf *config.Config, req *common.PBF
 		return nil, err
 	}
 
-	txnReq.Status = StatusInit
+	txnReq.Status = StatusPrePrepared
 	err = datastore.InsertTransaction(conf.DataStore, txnReq)
 	if err != nil {
 		return nil, err
 	}
 
-	err = VerifyPrePrepare(ctx, conf, req, txnReq)
+	err = VerifyPBFTMessage(ctx, conf, req, txnReq, MessageTypePrePrepare)
 	if err != nil {
 		UpdateTxnFailed(conf, txnReq, err)
 		return nil, err

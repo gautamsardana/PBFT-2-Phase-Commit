@@ -13,14 +13,14 @@ import (
 )
 
 func SendPrepare(conf *config.Config, req *common.TxnRequest) error {
-	fmt.Printf("Sending Prepare for request: %v\n", req)
+	fmt.Printf("Sending prepare for request: %v\n", req)
 
-	prepareMessages, err := datastore.GetPrepareMessages(conf.DataStore, req.TxnID, MessageTypePrePrepare)
+	prePrepareMessages, err := datastore.GetPBFTMessages(conf.DataStore, req.TxnID, MessageTypePrePrepare)
 	if err != nil {
 		return err
 	}
-	if len(prepareMessages) < int(conf.Majority) {
-		return errors.New("not enough Prepare Messages")
+	if len(prePrepareMessages) < int(conf.Majority) {
+		return errors.New("not enough pre-prepare messages")
 	}
 
 	dbTxn, err := datastore.GetTransactionByTxnID(conf.DataStore, req.TxnID)
@@ -37,7 +37,7 @@ func SendPrepare(conf *config.Config, req *common.TxnRequest) error {
 	cert := &common.Certificate{
 		ViewNumber:     dbTxn.ViewNo,
 		SequenceNumber: dbTxn.SeqNo,
-		Messages:       prepareMessages,
+		Messages:       prePrepareMessages,
 	}
 
 	certBytes, err := json.Marshal(cert)
@@ -104,13 +104,13 @@ func ReceivePrepare(ctx context.Context, conf *config.Config, req *common.PBFTRe
 		}
 	}()
 
-	fmt.Printf("Received Prepared request: %v\n", txnReq)
+	fmt.Printf("Received Prepared for request: %v\n", txnReq)
 	err = VerifyPrepare(ctx, conf, req, txnReq)
 	if err != nil {
 		return nil, err
 	}
 
-	err = AddPrepareMessages(conf, req)
+	err = AddPrePrepareMessages(conf, req)
 	if err != nil {
 		return nil, err
 	}

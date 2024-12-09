@@ -16,6 +16,7 @@ service Byz2PC {
 
   rpc PrePrepare(common.PBFTRequestResponse) returns (common.PBFTRequestResponse);
   rpc Prepare(common.PBFTRequestResponse) returns (common.PBFTRequestResponse);
+  rpc Commit(common.PBFTRequestResponse) returns (google.protobuf.Empty);
 
   rpc TwoPCCommit(common.TxnRequest) returns (common.ProcessTxnResponse);
   rpc TwoPCAbort(common.TxnRequest) returns (common.ProcessTxnResponse);
@@ -54,6 +55,7 @@ message TxnRequest {
   string Status = 8;
   string digest = 9;
   string Error = 10;
+  google.protobuf.Timestamp CreatedAt = 11;
 }
 
 message ProcessTxnResponse {

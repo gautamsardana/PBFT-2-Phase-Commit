@@ -1,15 +1,16 @@
 package logic
 
 import (
-	common "GolandProjects/2pcbyz-gautamsardana/api_common"
-	"GolandProjects/2pcbyz-gautamsardana/server/config"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+
+	common "GolandProjects/2pcbyz-gautamsardana/api_common"
+	"GolandProjects/2pcbyz-gautamsardana/server/config"
 )
 
-func VerifyPrePrepare(ctx context.Context, conf *config.Config, req *common.PBFTRequestResponse, txnReq *common.TxnRequest) error {
+func VerifyPBFTMessage(ctx context.Context, conf *config.Config, req *common.PBFTRequestResponse, txnReq *common.TxnRequest, messageType string) error {
 	serverAddr := MapServerNumberToAddress[req.ServerNo]
 	publicKey, err := conf.PublicKeys.GetPublicKey(serverAddr)
 	if err != nil {
@@ -33,15 +34,21 @@ func VerifyPrePrepare(ctx context.Context, conf *config.Config, req *common.PBFT
 	//	return errors.New("invalid sequence")
 	//}
 
-	digest := GetTxnDigest(conf, txnReq)
+	digest := GetTxnDigest(txnReq)
 	if digest != signedMessage.Digest {
 		return errors.New("invalid digest")
 	}
 
-	if signedMessage.SequenceNumber > conf.PBFT.GetSequenceNumber() {
-		conf.PBFT.SetSequenceNumber(signedMessage.SequenceNumber)
+	if messageType == MessageTypePrePrepare {
+		if signedMessage.SequenceNumber > conf.PBFT.GetSequenceNumber() {
+			conf.PBFT.SetSequenceNumber(signedMessage.SequenceNumber)
+		} else {
+			return errors.New("invalid sequence number")
+		}
 	} else {
-		return errors.New("invalid sequence number")
+		if signedMessage.SequenceNumber != conf.PBFT.GetSequenceNumber() {
+			return errors.New("invalid sequence number")
+		}
 	}
 
 	return nil

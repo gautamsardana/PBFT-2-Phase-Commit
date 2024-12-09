@@ -1,4 +1,4 @@
-package logic
+package datastore
 
 type User struct {
 	User    int32

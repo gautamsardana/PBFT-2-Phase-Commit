@@ -1,6 +1,7 @@
 package logic
 
 import (
+	"context"
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
@@ -23,17 +24,20 @@ const (
 	TypeCrossShardReceiver = "CrossShard-Receiver"
 
 	StatusInit              = "Init"
+	StatusPrePrepared       = "Pre-Prepared"
 	StatusPrepared          = "Prepared"
 	StatusCommitted         = "Committed"
+	StatusExecuted          = "Executed"
+	StatusPreparedToExecute = "PreparedToExecute"
 	StatusSuccess           = "Success"
-	StatusPreparedForCommit = "PreparedForCommit"
 	StatusRolledBack        = "RolledBack"
 	StatusFailed            = "Failed"
 )
 
 const (
-	MessageTypePrePrepare = "PrePrepare"
+	MessageTypePrePrepare = "Pre-Prepare"
 	MessageTypePrepare    = "Prepare"
+	MessageTypeCommit     = "Commit"
 )
 
 var MapServerNumberToAddress = map[int32]string{
@@ -97,8 +101,8 @@ func ValidateBalance(conf *config.Config, req *common.TxnRequest) error {
 	return nil
 }
 
-func GetTxnDigest(conf *config.Config, req *common.TxnRequest) string {
-	txn := &Txn{
+func GetTxnDigest(req *common.TxnRequest) string {
+	txn := &datastore.Txn{
 		Sender:   req.Sender,
 		Receiver: req.Receiver,
 		Amount:   req.Amount,
@@ -176,24 +180,24 @@ func UpdateTxnFailed(conf *config.Config, req *common.TxnRequest, err error) {
 	}
 }
 
-func FailureResponse(txn *common.TxnRequest, err error) *common.ProcessTxnResponse {
-	return &common.ProcessTxnResponse{
+func SendReplyToClient(conf *config.Config, txn *common.TxnRequest) {
+	response := &common.ProcessTxnResponse{
 		Txn:    txn,
-		Status: StatusFailed,
-		Error:  err.Error(),
+		Status: txn.Status,
+		Error:  txn.Error,
 	}
+
+	client, err := conf.Pool.GetServer(GetClientAddress())
+	if err != nil {
+		fmt.Println(err)
+	}
+	_, err = client.Callback(context.Background(), response)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return
 }
 
-func RolledBackResponse(txn *common.TxnRequest) *common.ProcessTxnResponse {
-	return &common.ProcessTxnResponse{
-		Txn:    txn,
-		Status: StatusRolledBack,
-	}
-}
-
-func SuccessResponse(txn *common.TxnRequest) *common.ProcessTxnResponse {
-	return &common.ProcessTxnResponse{
-		Txn:    txn,
-		Status: StatusSuccess,
-	}
+func GetClientAddress() string {
+	return "localhost:8000"
 }

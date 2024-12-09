@@ -1,9 +1,9 @@
 package datastore
 
 import (
-	"GolandProjects/2pcbyz-gautamsardana/server/logic"
 	"database/sql"
 	"errors"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"time"
 
 	common "GolandProjects/2pcbyz-gautamsardana/api_common"
@@ -21,7 +21,7 @@ func GetBalance(db *sql.DB, user int32) (float32, error) {
 	return balance, nil
 }
 
-func UpdateBalance(tx *sql.DB, user logic.User) error {
+func UpdateBalance(tx *sql.DB, user User) error {
 	query := `UPDATE user SET balance = ? WHERE user = ?`
 	res, err := tx.Exec(query, user.Balance, user.User)
 	if err != nil {
@@ -72,10 +72,11 @@ func UpdateTransactionStatus(tx *sql.DB, transaction *common.TxnRequest) error {
 	return nil
 }
 
-func GetTransactionsAfterTerm(db *sql.DB, term int32) ([]*common.TxnRequest, error) {
+func GetTransactionsAfterSequence(db *sql.DB, term int32) ([]*common.TxnRequest, error) {
 	var transactions []*common.TxnRequest
+	var createdAt time.Time
 
-	query := `SELECT txn_id, sender, receiver, amount, term, type, status FROM transaction WHERE term > ? AND status = 'committed' ORDER BY term`
+	query := `SELECT txn_id, sender, receiver, amount, seq_no, view_no, type, status, digest, error, created_at FROM transaction WHERE seq_no > ? AND status = 'Committed' ORDER BY seq_no`
 	rows, err := db.Query(query, term)
 	if err != nil {
 		return nil, err
@@ -84,9 +85,11 @@ func GetTransactionsAfterTerm(db *sql.DB, term int32) ([]*common.TxnRequest, err
 
 	for rows.Next() {
 		var txn common.TxnRequest
-		if err = rows.Scan(&txn.TxnID, &txn.Sender, &txn.Receiver, &txn.Amount, &txn.Term, &txn.Type, &txn.Status); err != nil {
+		if err = rows.Scan(&txn.TxnID, &txn.Sender, &txn.Receiver, &txn.Amount, &txn.SeqNo, &txn.ViewNo,
+			&txn.Type, &txn.Status, &txn.Digest, &txn.Error, createdAt); err != nil {
 			return nil, err
 		}
+		txn.CreatedAt = timestamppb.New(createdAt)
 		transactions = append(transactions, &txn)
 	}
 	if err = rows.Err(); err != nil {
@@ -97,8 +100,9 @@ func GetTransactionsAfterTerm(db *sql.DB, term int32) ([]*common.TxnRequest, err
 
 func GetCommittedTxns(db *sql.DB) ([]*common.TxnRequest, error) {
 	var transactions []*common.TxnRequest
+	var createdAt time.Time
 
-	query := `SELECT txn_id, sender, receiver, amount, term, type, status FROM transaction WHERE status = 'committed' ORDER BY term`
+	query := `SELECT txn_id, sender, receiver, amount, seq_no, view_no, type, status, digest, error, created_at FROM transaction WHERE status = 'committed' ORDER BY seq_no`
 	rows, err := db.Query(query)
 	if err != nil {
 		return nil, err
@@ -107,9 +111,11 @@ func GetCommittedTxns(db *sql.DB) ([]*common.TxnRequest, error) {
 
 	for rows.Next() {
 		var txn common.TxnRequest
-		if err = rows.Scan(&txn.TxnID, &txn.Sender, &txn.Receiver, &txn.Amount, &txn.Term, &txn.Type, &txn.Status); err != nil {
+		if err = rows.Scan(&txn.TxnID, &txn.Sender, &txn.Receiver, &txn.Amount, &txn.SeqNo, &txn.ViewNo,
+			&txn.Type, &txn.Status, &txn.Digest, &txn.Error, createdAt); err != nil {
 			return nil, err
 		}
+		txn.CreatedAt = timestamppb.New(createdAt)
 		transactions = append(transactions, &txn)
 	}
 	if err = rows.Err(); err != nil {
@@ -128,7 +134,7 @@ func InsertPBFTMessage(db *sql.DB, pbftMessage *common.PBFTMessage) error {
 	return nil
 }
 
-func GetPrepareMessages(db *sql.DB, txnID, messagesType string) ([]*common.PBFTMessage, error) {
+func GetPBFTMessages(db *sql.DB, txnID, messagesType string) ([]*common.PBFTMessage, error) {
 	query := `SELECT txn_id, message_type, sender, sign, payload, created_at from PBFT_Messages where txn_id = ? and message_type = ?`
 	rows, err := db.Query(query, txnID, messagesType)
 	if err != nil {

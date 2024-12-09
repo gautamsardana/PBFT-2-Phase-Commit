@@ -15,14 +15,14 @@ func ProcessTxn(ctx context.Context, conf *config.Config, req *common.TxnRequest
 
 	dbTxn, err := datastore.GetTransactionByTxnID(conf.DataStore, req.TxnID)
 	if err != nil {
-		return FailureResponse(req, err), nil
+		return err
 	}
 	if dbTxn != nil {
-		return FailureResponse(req, errors.New("txn id already exists, invalid commit"))
+		return errors.New("txn id already exists, invalid commit")
 	}
 
 	req.Type = GetTxnType(conf, req)
-	req.Digest = GetTxnDigest(conf, req)
+	req.Digest = GetTxnDigest(req)
 	req.SeqNo = conf.PBFT.IncrementSequenceNumber()
 	req.ViewNo = conf.PBFT.GetViewNumber()
 
@@ -36,6 +36,7 @@ func ProcessTxn(ctx context.Context, conf *config.Config, req *common.TxnRequest
 		if err != nil {
 			UpdateTxnFailed(conf, req, err)
 			ReleaseLock(conf, req)
+			SendReplyToClient(conf, req)
 		}
 	}()
 
@@ -45,14 +46,31 @@ func ProcessTxn(ctx context.Context, conf *config.Config, req *common.TxnRequest
 		return lockErr
 	}
 
-	//defer ReleaseLock(conf, req)
-
 	err = ValidateBalance(conf, req)
 	if err != nil {
 		return err
 	}
 
-	err = SendPrePrepare(conf, req)
+	err = StartConsensus(conf, req)
+	if err != nil {
+		return err
+	}
+
+	err = ExecuteTxn(conf, req)
+	if err != nil {
+		return err
+	}
+	ReleaseLock(conf, req)
+
+	if req.Type == TypeIntraShard {
+		go SendReplyToClient(conf, req)
+	}
+
+	return nil
+}
+
+func StartConsensus(conf *config.Config, req *common.TxnRequest) error {
+	err := SendPrePrepare(conf, req)
 	if err != nil {
 		return err
 	}
@@ -66,6 +84,5 @@ func ProcessTxn(ctx context.Context, conf *config.Config, req *common.TxnRequest
 	if err != nil {
 		return err
 	}
-
 	return nil
 }

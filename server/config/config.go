@@ -9,6 +9,7 @@ import (
 	"encoding/pem"
 	"flag"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 	"log"
 	"os"
 	"sync"
@@ -16,6 +17,8 @@ import (
 	publicKeyPool "GolandProjects/2pcbyz-gautamsardana/public_key_pool"
 	serverPool "GolandProjects/2pcbyz-gautamsardana/server_pool"
 )
+
+const configPath = "/Users/gautamsardana/go/src/GolandProjects/2pcbyz-gautamsardana/server/config/config.json"
 
 type Config struct {
 	BasePort            int32 `json:"base_port"`
@@ -85,10 +88,7 @@ func InitiatePrivateKey(conf *Config) {
 }
 
 func GetConfig() *Config {
-	configPath := flag.String("config", "config.json", "Path to the configuration file")
-	serverNumber := flag.Int("server", 1, "Server number")
-	flag.Parse()
-	jsonConfig, err := os.ReadFile(*configPath)
+	jsonConfig, err := os.ReadFile(configPath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -97,6 +97,8 @@ func GetConfig() *Config {
 		log.Fatal(err)
 	}
 
+	serverNumber := flag.Int("server", 1, "Server number")
+	flag.Parse()
 	conf.ServerNumber = int32(*serverNumber)
 	conf.Port = fmt.Sprintf("%d", int(conf.BasePort)+*serverNumber)
 
