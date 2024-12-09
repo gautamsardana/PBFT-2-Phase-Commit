@@ -23,6 +23,7 @@ const (
 	Byz2PC_UpdateServerState_FullMethodName = "/common.Byz2PC/UpdateServerState"
 	Byz2PC_Callback_FullMethodName          = "/common.Byz2PC/Callback"
 	Byz2PC_ProcessTxnSet_FullMethodName     = "/common.Byz2PC/ProcessTxnSet"
+	Byz2PC_ProcessTxn_FullMethodName        = "/common.Byz2PC/ProcessTxn"
 	Byz2PC_PrePrepare_FullMethodName        = "/common.Byz2PC/PrePrepare"
 	Byz2PC_Prepare_FullMethodName           = "/common.Byz2PC/Prepare"
 	Byz2PC_Commit_FullMethodName            = "/common.Byz2PC/Commit"
@@ -40,6 +41,7 @@ type Byz2PCClient interface {
 	UpdateServerState(ctx context.Context, in *UpdateServerStateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Callback(ctx context.Context, in *ProcessTxnResponse, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ProcessTxnSet(ctx context.Context, in *TxnSet, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ProcessTxn(ctx context.Context, in *TxnRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	PrePrepare(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*PBFTRequestResponse, error)
 	Prepare(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*PBFTRequestResponse, error)
 	Commit(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -82,6 +84,16 @@ func (c *byz2PCClient) ProcessTxnSet(ctx context.Context, in *TxnSet, opts ...gr
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, Byz2PC_ProcessTxnSet_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *byz2PCClient) ProcessTxn(ctx context.Context, in *TxnRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, Byz2PC_ProcessTxn_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -175,6 +187,7 @@ type Byz2PCServer interface {
 	UpdateServerState(context.Context, *UpdateServerStateRequest) (*emptypb.Empty, error)
 	Callback(context.Context, *ProcessTxnResponse) (*emptypb.Empty, error)
 	ProcessTxnSet(context.Context, *TxnSet) (*emptypb.Empty, error)
+	ProcessTxn(context.Context, *TxnRequest) (*emptypb.Empty, error)
 	PrePrepare(context.Context, *PBFTRequestResponse) (*PBFTRequestResponse, error)
 	Prepare(context.Context, *PBFTRequestResponse) (*PBFTRequestResponse, error)
 	Commit(context.Context, *PBFTRequestResponse) (*emptypb.Empty, error)
@@ -201,6 +214,9 @@ func (UnimplementedByz2PCServer) Callback(context.Context, *ProcessTxnResponse) 
 }
 func (UnimplementedByz2PCServer) ProcessTxnSet(context.Context, *TxnSet) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ProcessTxnSet not implemented")
+}
+func (UnimplementedByz2PCServer) ProcessTxn(context.Context, *TxnRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ProcessTxn not implemented")
 }
 func (UnimplementedByz2PCServer) PrePrepare(context.Context, *PBFTRequestResponse) (*PBFTRequestResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PrePrepare not implemented")
@@ -297,6 +313,24 @@ func _Byz2PC_ProcessTxnSet_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(Byz2PCServer).ProcessTxnSet(ctx, req.(*TxnSet))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Byz2PC_ProcessTxn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TxnRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(Byz2PCServer).ProcessTxn(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Byz2PC_ProcessTxn_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(Byz2PCServer).ProcessTxn(ctx, req.(*TxnRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -463,6 +497,10 @@ var Byz2PC_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ProcessTxnSet",
 			Handler:    _Byz2PC_ProcessTxnSet_Handler,
+		},
+		{
+			MethodName: "ProcessTxn",
+			Handler:    _Byz2PC_ProcessTxn_Handler,
 		},
 		{
 			MethodName: "PrePrepare",

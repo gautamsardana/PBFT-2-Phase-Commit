@@ -19,7 +19,7 @@ func ProcessCrossShardTxn(conf *config.Config, txn *common.TxnRequest, senderClu
 		fmt.Println(err)
 	}
 
-	_, err = senderServer.EnqueueTxn(context.Background(), txn)
+	_, err = senderServer.ProcessTxn(context.Background(), txn)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -29,7 +29,7 @@ func ProcessCrossShardTxn(conf *config.Config, txn *common.TxnRequest, senderClu
 		fmt.Println(err)
 	}
 
-	_, err = receiverServer.EnqueueTxn(context.Background(), txn)
+	_, err = receiverServer.ProcessTxn(context.Background(), txn)
 	if err != nil {
 		fmt.Println(err)
 	}

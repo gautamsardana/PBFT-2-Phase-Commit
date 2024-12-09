@@ -2,11 +2,35 @@
     protoc --go_out=. --go-grpc_out=. common.proto
 
 
-CREATE TABLE PBFT_Messages (
-    txn_id PRIMARY KEY,                  -- Unique ID for the message
-    message_type VARCHAR(20) NOT NULL,      -- Type of message (e.g., "PREPARE", "ACCEPT")
-    sender VARCHAR(255) NOT NULL,        -- ID of the sender (e.g., node ID or public key)
-    sign TEXT NOT NULL,                -- RSA signature for the message
-    payload JSONB NOT NULL,                 -- Message content (e.g., hash, timestamp)
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+CREATE TABLE `user` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `user` int DEFAULT NULL,
+  `balance` double(10,2) DEFAULT '10.00',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=35151 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `transaction` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `txn_id` varchar(255) NOT NULL,
+  `sender` int NOT NULL,
+  `receiver` int NOT NULL,
+  `amount` double(10,2) DEFAULT NULL,
+  `seq_no` int DEFAULT NULL,
+  `view_no` int DEFAULT NULL,
+  `type` varchar(255) NOT NULL,
+  `status` varchar(255) DEFAULT NULL,
+  `digest` varchar(255) DEFAULT NULL,
+  `error` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_txnid` (`txn_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4818 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE pbft_messages (
+    `txn_id` varchar(255) NOT NULL,
+	`message_type` varchar(64) NOT NULL,
+    `sender` int DEFAULT NULL,
+    `sign` TEXT NOT NULL,
+    `payload` TEXT NOT NULL,
+    `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB AUTO_INCREMENT=35151 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

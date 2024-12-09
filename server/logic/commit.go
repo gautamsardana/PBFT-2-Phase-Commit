@@ -73,7 +73,7 @@ func SendCommit(conf *config.Config, req *common.TxnRequest) error {
 				fmt.Println(err)
 			}
 
-		}(MapServerNumberToAddress[serverNo])
+		}(config.MapServerNumberToAddress[serverNo])
 	}
 	wg.Wait()
 

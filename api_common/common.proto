@@ -14,6 +14,7 @@ service Byz2PC {
 
   rpc ProcessTxnSet(common.TxnSet) returns (google.protobuf.Empty);
 
+  rpc ProcessTxn(common.TxnRequest) returns (google.protobuf.Empty);
   rpc PrePrepare(common.PBFTRequestResponse) returns (common.PBFTRequestResponse);
   rpc Prepare(common.PBFTRequestResponse) returns (common.PBFTRequestResponse);
   rpc Commit(common.PBFTRequestResponse) returns (google.protobuf.Empty);

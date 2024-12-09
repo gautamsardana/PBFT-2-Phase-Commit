@@ -2,11 +2,8 @@ package config
 
 import (
 	"crypto/rsa"
-	"crypto/x509"
 	"database/sql"
-	"encoding/base64"
 	"encoding/json"
-	"encoding/pem"
 	"flag"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
@@ -14,7 +11,7 @@ import (
 	"os"
 	"sync"
 
-	publicKeyPool "GolandProjects/2pcbyz-gautamsardana/public_key_pool"
+	KeyPool "GolandProjects/2pcbyz-gautamsardana/key_pool"
 	serverPool "GolandProjects/2pcbyz-gautamsardana/server_pool"
 )
 
@@ -35,9 +32,8 @@ type Config struct {
 	DataItemsPerShard   int32
 	IsAlive             bool
 
-	PublicKeys       *publicKeyPool.PublicKeyPool
-	PrivateKeyString string `json:"private_key"`
-	PrivateKey       *rsa.PrivateKey
+	PublicKeys *KeyPool.KeyPool
+	PrivateKey *rsa.PrivateKey
 
 	PBFT *PBFTConfig
 
@@ -50,6 +46,7 @@ func InitiateConfig(conf *Config) {
 	InitiatePublicKeys(conf)
 	InitiatePrivateKey(conf)
 	conf.MapClusterToServers = make(map[int32][]int32)
+	conf.PBFT = &PBFTConfig{ViewNumber: 1}
 }
 
 func InitiateServerPool(conf *Config) {
@@ -61,30 +58,25 @@ func InitiateServerPool(conf *Config) {
 }
 
 func InitiatePublicKeys(conf *Config) {
-	pool, err := publicKeyPool.NewPublicKeyPool()
+	pool, err := KeyPool.NewPublicKeyPool()
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 	conf.PublicKeys = pool
 }
 
 func InitiatePrivateKey(conf *Config) {
-	pemData, err := base64.StdEncoding.DecodeString(conf.PrivateKeyString)
+	pool, err := KeyPool.NewPrivateKeyPool()
 	if err != nil {
-		return
+		fmt.Println(err)
 	}
 
-	block, _ := pem.Decode(pemData)
-	if block == nil {
-		return
-	}
+	serverAddr := MapServerNumberToAddress[conf.ServerNumber]
 
-	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	conf.PrivateKey, err = pool.GetPrivateKey(serverAddr)
 	if err != nil {
-		return
+		log.Fatal(err)
 	}
-
-	conf.PrivateKey = privateKey
 }
 
 func GetConfig() *Config {
@@ -113,4 +105,19 @@ func SetupDB(config *Config) {
 	}
 	config.DataStore = db
 	fmt.Println("MySQL Connected!!")
+}
+
+var MapServerNumberToAddress = map[int32]string{
+	1:  "localhost:8081",
+	2:  "localhost:8082",
+	3:  "localhost:8083",
+	4:  "localhost:8084",
+	5:  "localhost:8085",
+	6:  "localhost:8086",
+	7:  "localhost:8087",
+	8:  "localhost:8088",
+	9:  "localhost:8089",
+	10: "localhost:8090",
+	11: "localhost:8091",
+	12: "localhost:8092",
 }

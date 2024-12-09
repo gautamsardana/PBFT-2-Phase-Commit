@@ -13,7 +13,7 @@ import (
 	common "GolandProjects/2pcbyz-gautamsardana/api_common"
 )
 
-const inputFilePath = "Test_Cases_-_Lab3.csv"
+const inputFilePath = "Lab4_New_tests.csv"
 
 var sets map[int32]*common.TxnSet
 var totalSets int32
@@ -147,11 +147,11 @@ func main() {
 	fmt.Println("All sets processed.")
 }
 
-func InitiateClient() common.Paxos2PCClient {
+func InitiateClient() common.Byz2PCClient {
 	conn, err := grpc.NewClient("localhost:8000", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil
 	}
-	client := common.NewPaxos2PCClient(conn)
+	client := common.NewByz2PCClient(conn)
 	return client
 }

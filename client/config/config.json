@@ -9,10 +9,13 @@
     "localhost:8086",
     "localhost:8087",
     "localhost:8088",
-    "localhost:8089"
+    "localhost:8089",
+    "localhost:8090",
+    "localhost:8091",
+    "localhost:8092"
   ],
   "clusters": 3,
-  "cluster_size": 3,
+  "cluster_size": 4,
   "total_users": 3000,
-  "db_dsn": "root@tcp(localhost:3306)/lab3_%d?parseTime=true"
+  "db_dsn": "root@tcp(localhost:3306)/lab4_%d?parseTime=true"
 }

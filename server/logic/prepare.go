@@ -81,7 +81,7 @@ func SendPrepare(conf *config.Config, req *common.TxnRequest) error {
 
 			HandlePBFTResponse(conf, resp, MessageTypePrepare)
 
-		}(MapServerNumberToAddress[serverNo])
+		}(config.MapServerNumberToAddress[serverNo])
 	}
 	wg.Wait()
 

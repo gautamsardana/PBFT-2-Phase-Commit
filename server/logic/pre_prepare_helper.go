@@ -11,7 +11,7 @@ import (
 )
 
 func VerifyPBFTMessage(ctx context.Context, conf *config.Config, req *common.PBFTRequestResponse, txnReq *common.TxnRequest, messageType string) error {
-	serverAddr := MapServerNumberToAddress[req.ServerNo]
+	serverAddr := config.MapServerNumberToAddress[req.ServerNo]
 	publicKey, err := conf.PublicKeys.GetPublicKey(serverAddr)
 	if err != nil {
 		return err
@@ -43,6 +43,7 @@ func VerifyPBFTMessage(ctx context.Context, conf *config.Config, req *common.PBF
 		if signedMessage.SequenceNumber > conf.PBFT.GetSequenceNumber() {
 			conf.PBFT.SetSequenceNumber(signedMessage.SequenceNumber)
 		} else {
+			fmt.Println(signedMessage.SequenceNumber, conf.PBFT.GetSequenceNumber())
 			return errors.New("invalid sequence number")
 		}
 	} else {

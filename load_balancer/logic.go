@@ -7,7 +7,7 @@ import (
 	common "GolandProjects/2pcbyz-gautamsardana/api_common"
 )
 
-func PrintBalance(client common.Paxos2PCClient, user int32) {
+func PrintBalance(client common.Byz2PCClient, user int32) {
 	resp, err := client.PrintBalance(context.Background(), &common.PrintBalanceRequest{User: user})
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -16,7 +16,7 @@ func PrintBalance(client common.Paxos2PCClient, user int32) {
 	fmt.Printf("Balance of user %v: %v\n", user, resp.Balance)
 }
 
-func PrintDB(client common.Paxos2PCClient, server int32) {
+func PrintDB(client common.Byz2PCClient, server int32) {
 	resp, err := client.PrintDB(context.Background(), &common.PrintDBRequest{Server: server})
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -29,7 +29,7 @@ func PrintDB(client common.Paxos2PCClient, server int32) {
 	}
 }
 
-func Performance(client common.Paxos2PCClient) {
+func Performance(client common.Byz2PCClient) {
 	resp, err := client.Performance(context.Background(), nil)
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -41,7 +41,7 @@ func Performance(client common.Paxos2PCClient) {
 	fmt.Printf("Throughput: %.2f transactions/sec\n", resp.Throughput)
 }
 
-func ProcessSet(s *common.TxnSet, client common.Paxos2PCClient) {
+func ProcessSet(s *common.TxnSet, client common.Byz2PCClient) {
 	_, err := client.ProcessTxnSet(context.Background(), s)
 	if err != nil {
 		return

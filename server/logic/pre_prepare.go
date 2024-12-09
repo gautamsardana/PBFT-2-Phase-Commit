@@ -74,7 +74,7 @@ func SendPrePrepare(conf *config.Config, req *common.TxnRequest) error {
 
 			HandlePBFTResponse(conf, resp, MessageTypePrePrepare)
 
-		}(MapServerNumberToAddress[serverNo])
+		}(config.MapServerNumberToAddress[serverNo])
 	}
 	wg.Wait()
 
@@ -85,8 +85,6 @@ func ReceivePrePrepare(ctx context.Context, conf *config.Config, req *common.PBF
 	//todo: check if txn already exists? any scenario where i
 	// already have in my db but i get another prepare?
 
-	fmt.Printf("Received PrePrepare for request: %v\n", req)
-
 	if !conf.IsAlive {
 		return nil, errors.New("server dead")
 	}
@@ -96,6 +94,8 @@ func ReceivePrePrepare(ctx context.Context, conf *config.Config, req *common.PBF
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Printf("Received PrePrepare for request: %v\n", txnReq)
 
 	txnReq.Status = StatusPrePrepared
 	err = datastore.InsertTransaction(conf.DataStore, txnReq)

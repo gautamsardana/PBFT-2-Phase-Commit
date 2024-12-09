@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,7 +13,7 @@ import (
 )
 
 func VerifyCommit(ctx context.Context, conf *config.Config, req *common.PBFTRequestResponse, txnReq *common.TxnRequest) error {
-	serverAddr := MapServerNumberToAddress[req.ServerNo]
+	serverAddr := config.MapServerNumberToAddress[req.ServerNo]
 	publicKey, err := conf.PublicKeys.GetPublicKey(serverAddr)
 	if err != nil {
 		return err
@@ -31,9 +32,12 @@ func VerifyCommit(ctx context.Context, conf *config.Config, req *common.PBFTRequ
 
 	validPrepareCount := int32(0)
 	for _, prepareMessage := range cert.Messages {
+		payload, _ := base64.StdEncoding.DecodeString(prepareMessage.Payload)
+		sign, _ := base64.StdEncoding.DecodeString(prepareMessage.Sign)
+
 		verifyReq := &common.PBFTRequestResponse{
-			SignedMessage: []byte(prepareMessage.Payload),
-			Sign:          []byte(prepareMessage.Sign),
+			SignedMessage: payload,
+			Sign:          sign,
 			ServerNo:      prepareMessage.Sender,
 		}
 

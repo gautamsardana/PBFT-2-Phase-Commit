@@ -19,7 +19,7 @@ func ProcessIntraShardTxn(conf *config.Config, txn *common.TxnRequest, cluster i
 		fmt.Println(err)
 	}
 
-	_, err = server.EnqueueTxn(context.Background(), txn)
+	_, err = server.ProcessTxn(context.Background(), txn)
 	if err != nil {
 		fmt.Println(err)
 	}

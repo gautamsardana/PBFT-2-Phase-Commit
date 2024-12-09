@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -40,7 +41,7 @@ func SendPrepareResponse(conf *config.Config, req *common.PBFTRequestResponse, t
 }
 
 func VerifyPrepare(ctx context.Context, conf *config.Config, req *common.PBFTRequestResponse, txnReq *common.TxnRequest) error {
-	serverAddr := MapServerNumberToAddress[req.ServerNo]
+	serverAddr := config.MapServerNumberToAddress[req.ServerNo]
 	publicKey, err := conf.PublicKeys.GetPublicKey(serverAddr)
 	if err != nil {
 		return err
@@ -59,9 +60,12 @@ func VerifyPrepare(ctx context.Context, conf *config.Config, req *common.PBFTReq
 
 	validPrePrepareCount := int32(0)
 	for _, prePrepareMessage := range cert.Messages {
+		payload, _ := base64.StdEncoding.DecodeString(prePrepareMessage.Payload)
+		sign, _ := base64.StdEncoding.DecodeString(prePrepareMessage.Sign)
+
 		verifyReq := &common.PBFTRequestResponse{
-			SignedMessage: []byte(prePrepareMessage.Payload),
-			Sign:          []byte(prePrepareMessage.Sign),
+			SignedMessage: payload,
+			Sign:          sign,
 			ServerNo:      prePrepareMessage.Sender,
 		}
 

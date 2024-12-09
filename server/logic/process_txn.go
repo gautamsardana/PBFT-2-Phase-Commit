@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 
@@ -14,7 +15,7 @@ func ProcessTxn(ctx context.Context, conf *config.Config, req *common.TxnRequest
 	fmt.Printf("Received ProcessTxn request: %v\n", req)
 
 	dbTxn, err := datastore.GetTransactionByTxnID(conf.DataStore, req.TxnID)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		return err
 	}
 	if dbTxn != nil {

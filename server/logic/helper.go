@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -39,21 +40,6 @@ const (
 	MessageTypePrepare    = "Prepare"
 	MessageTypeCommit     = "Commit"
 )
-
-var MapServerNumberToAddress = map[int32]string{
-	1:  "localhost:8081",
-	2:  "localhost:8082",
-	3:  "localhost:8083",
-	4:  "localhost:8084",
-	5:  "localhost:8085",
-	6:  "localhost:8086",
-	7:  "localhost:8087",
-	8:  "localhost:8088",
-	9:  "localhost:8089",
-	10: "localhost:8090",
-	11: "localhost:8091",
-	12: "localhost:8092",
-}
 
 func SignMessage(privateKey *rsa.PrivateKey, message []byte) ([]byte, error) {
 	hash := sha256.Sum256(message)
@@ -130,6 +116,11 @@ func AcquireLockWithAbort(conf *config.Config, req *common.TxnRequest) error {
 }
 
 func HandlePBFTResponse(conf *config.Config, resp *common.PBFTRequestResponse, messageType string) {
+	if resp == nil {
+		fmt.Printf("HandlePrePrepareResponse error: resp nil\n")
+		return
+	}
+
 	txnReq := &common.TxnRequest{}
 	err := json.Unmarshal(resp.TxnRequest, txnReq)
 	if err != nil {
@@ -141,8 +132,8 @@ func HandlePBFTResponse(conf *config.Config, resp *common.PBFTRequestResponse, m
 		TxnID:       txnReq.TxnID,
 		MessageType: messageType,
 		Sender:      resp.ServerNo,
-		Sign:        string(resp.Sign),
-		Payload:     string(resp.SignedMessage),
+		Sign:        base64.StdEncoding.EncodeToString(resp.Sign),
+		Payload:     base64.StdEncoding.EncodeToString(resp.SignedMessage),
 		CreatedAt:   timestamppb.New(time.Now()),
 	}
 

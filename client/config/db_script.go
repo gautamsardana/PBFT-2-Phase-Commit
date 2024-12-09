@@ -20,6 +20,7 @@ func PopulateDB(dsn string, server, userStart, userEnd int32) {
 	queries := []string{
 		"DELETE FROM transaction",
 		"DELETE FROM user",
+		"DELETE FROM pbft_messages",
 	}
 	for _, query := range queries {
 		if _, err := db.Exec(query); err != nil {

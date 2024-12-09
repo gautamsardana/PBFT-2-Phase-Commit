@@ -1,4 +1,4 @@
-package public_key_pool
+package key_pool
 
 import (
 	"crypto/rsa"
@@ -14,16 +14,18 @@ import (
 const configPath = "/go/src/GolandProjects/pbft-gautamsardana/public_key_pool/config.json"
 
 type Config struct {
-	PublicKeys map[string]string `json:"public_keys"`
+	PublicKeys  map[string]string `json:"public_keys"`
+	PrivateKeys map[string]string `json:"private_keys"`
 }
 
-type PublicKeyPool struct {
+type KeyPool struct {
 	PublicKeys map[string]*rsa.PublicKey
+	PrivateKey map[string]*rsa.PrivateKey
 }
 
-func NewPublicKeyPool() (*PublicKeyPool, error) {
+func NewPublicKeyPool() (*KeyPool, error) {
 	conf := GetConfig()
-	publicKeyPool := &PublicKeyPool{
+	publicKeyPool := &KeyPool{
 		PublicKeys: make(map[string]*rsa.PublicKey),
 	}
 
@@ -54,12 +56,48 @@ func NewPublicKeyPool() (*PublicKeyPool, error) {
 	return publicKeyPool, nil
 }
 
-func (pkp *PublicKeyPool) GetPublicKey(addr string) (*rsa.PublicKey, error) {
+func (pkp *KeyPool) GetPublicKey(addr string) (*rsa.PublicKey, error) {
 	pubKey, exists := pkp.PublicKeys[addr]
 	if !exists {
 		return nil, fmt.Errorf("public key not found for address %s", addr)
 	}
 	return pubKey, nil
+}
+
+func NewPrivateKeyPool() (*KeyPool, error) {
+	conf := GetConfig()
+	privateKeyPool := &KeyPool{
+		PrivateKey: make(map[string]*rsa.PrivateKey),
+	}
+
+	for addr, privateKeyStr := range conf.PrivateKeys {
+		privateKeyBytes, err := base64.StdEncoding.DecodeString(privateKeyStr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode base64 private key for %s: %v", addr, err)
+		}
+
+		block, _ := pem.Decode(privateKeyBytes)
+		if block == nil {
+			return nil, fmt.Errorf("failed to parse PEM block containing the private key for %s", addr)
+		}
+
+		privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse private key for %s: %v", addr, err)
+		}
+
+		privateKeyPool.PrivateKey[addr] = privateKey
+	}
+
+	return privateKeyPool, nil
+}
+
+func (pkp *KeyPool) GetPrivateKey(addr string) (*rsa.PrivateKey, error) {
+	privateKey, exists := pkp.PrivateKey[addr]
+	if !exists {
+		return nil, fmt.Errorf("private key not found for address %s", addr)
+	}
+	return privateKey, nil
 }
 
 func GetConfig() *Config {
