@@ -34,3 +34,15 @@ CREATE TABLE pbft_messages (
     `payload` TEXT NOT NULL,
     `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB AUTO_INCREMENT=35151 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+
+things to do -
+1. client sends a req to leader -> leader can't get lock -> leader ignores the txn ->
+client times out -> sends request to everyone -> everyone forwards request to leader -> leader gets request again -> ???
+
+2. Sequential execution always
+
+3. "Feel free to add a queueing mechanism or delay transactions instead of ignoring them immediately. "
+
+participant cluster -> all nodes get

@@ -24,6 +24,7 @@ type Config struct {
 	Pool                *serverPool.ServerPool
 	DBDSN               string `json:"db_dsn"`
 	MapClusterToServers map[int32][]int32
+	ViewNumber          int32 `json:"view_number"`
 
 	Lock         sync.Mutex
 	TxnResponses map[string][]*common.ProcessTxnResponse

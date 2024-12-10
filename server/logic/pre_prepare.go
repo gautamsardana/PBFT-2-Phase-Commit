@@ -72,7 +72,7 @@ func SendPrePrepare(conf *config.Config, req *common.TxnRequest) error {
 				fmt.Println(err)
 			}
 
-			HandlePBFTResponse(conf, resp, MessageTypePrePrepare)
+			HandlePBFTResponse(conf, resp, MessageTypePrepare)
 
 		}(config.MapServerNumberToAddress[serverNo])
 	}
@@ -97,7 +97,7 @@ func ReceivePrePrepare(ctx context.Context, conf *config.Config, req *common.PBF
 
 	fmt.Printf("Received PrePrepare for request: %v\n", txnReq)
 
-	txnReq.Status = StatusPrePrepared
+	txnReq.Status = StatusPrepared
 	err = datastore.InsertTransaction(conf.DataStore, txnReq)
 	if err != nil {
 		return nil, err
@@ -109,7 +109,7 @@ func ReceivePrePrepare(ctx context.Context, conf *config.Config, req *common.PBF
 		return nil, err
 	}
 
-	lockErr := AcquireLockWithAbort(conf, txnReq)
+	lockErr := AcquireLock(conf, txnReq)
 	if lockErr != nil {
 		UpdateTxnFailed(conf, txnReq, lockErr)
 		return nil, lockErr

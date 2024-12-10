@@ -56,7 +56,7 @@ func VerifyCommit(ctx context.Context, conf *config.Config, req *common.PBFTRequ
 	return nil
 }
 
-func AddPrepareMessages(conf *config.Config, req *common.PBFTRequestResponse) error {
+func AddCommitMessages(conf *config.Config, req *common.PBFTRequestResponse) error {
 	cert := &common.Certificate{}
 	err := json.Unmarshal(req.SignedMessage, cert)
 	if err != nil {

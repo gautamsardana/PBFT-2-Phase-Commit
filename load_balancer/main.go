@@ -32,7 +32,7 @@ func loadCSV(filename string) error {
 
 	var currentSetNo int32
 	var currentLiveServers []string
-	var contactServers []string
+	var byzantineServers []string
 
 	for {
 		setRow, err := reader.Read()
@@ -50,17 +50,17 @@ func loadCSV(filename string) error {
 				currentLiveServers[i] = strings.TrimSpace(currentLiveServers[i])
 			}
 
-			contactServers = strings.Split(strings.Trim(setRow[3], "[] "), ",")
-			for i := range contactServers {
-				contactServers[i] = strings.TrimSpace(contactServers[i])
+			byzantineServers = strings.Split(strings.Trim(setRow[3], "[] "), ",")
+			for i := range byzantineServers {
+				byzantineServers[i] = strings.TrimSpace(byzantineServers[i])
 			}
 
 			if _, exists := sets[currentSetNo]; !exists {
 				sets[currentSetNo] = &common.TxnSet{
-					SetNo:          currentSetNo,
-					Txns:           []*common.TxnRequest{},
-					LiveServers:    currentLiveServers,
-					ContactServers: contactServers,
+					SetNo:            currentSetNo,
+					Txns:             []*common.TxnRequest{},
+					LiveServers:      currentLiveServers,
+					ByzantineServers: byzantineServers,
 				}
 			}
 		}
@@ -107,7 +107,7 @@ func main() {
 
 	var i int32
 	for i = 1; i <= totalSets; i++ {
-		fmt.Printf("Processing Set %d: Txns: %v LiveServers: %v ContactServers: %v\n", i, sets[i].Txns, sets[i].LiveServers, sets[i].ContactServers)
+		fmt.Printf("Processing Set %d: Txns: %v LiveServers: %v ContactServers: %v\n", i, sets[i].Txns, sets[i].LiveServers, sets[i].ByzantineServers)
 
 		scanner.Scan()
 		ProcessSet(sets[i], client)

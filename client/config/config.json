@@ -17,5 +17,6 @@
   "clusters": 3,
   "cluster_size": 4,
   "total_users": 3000,
-  "db_dsn": "root@tcp(localhost:3306)/lab4_%d?parseTime=true"
+  "db_dsn": "root@tcp(localhost:3306)/lab4_%d?parseTime=true",
+  "view_number": 1
 }

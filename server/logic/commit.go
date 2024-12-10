@@ -15,15 +15,21 @@ import (
 func SendCommit(conf *config.Config, req *common.TxnRequest) error {
 	fmt.Printf("Sending commit for request: %v\n", req)
 
-	prepareMessages, err := datastore.GetPBFTMessages(conf.DataStore, req.TxnID, MessageTypePrepare)
+	commitMessages, err := datastore.GetPBFTMessages(conf.DataStore, req.TxnID, MessageTypeCommit)
 	if err != nil {
 		return err
 	}
-	if len(prepareMessages) < int(conf.Majority) {
-		return errors.New("not enough prepare messages")
+	if len(commitMessages) < int(conf.Majority) {
+		return errors.New("not enough commit messages")
 	}
 
 	dbTxn, err := datastore.GetTransactionByTxnID(conf.DataStore, req.TxnID)
+	if err != nil {
+		return err
+	}
+
+	dbTxn.Status = StatusCommitted
+	err = datastore.UpdateTransactionStatus(conf.DataStore, dbTxn)
 	if err != nil {
 		return err
 	}
@@ -36,7 +42,7 @@ func SendCommit(conf *config.Config, req *common.TxnRequest) error {
 	cert := &common.Certificate{
 		ViewNumber:     dbTxn.ViewNo,
 		SequenceNumber: dbTxn.SeqNo,
-		Messages:       prepareMessages,
+		Messages:       commitMessages,
 	}
 
 	certBytes, err := json.Marshal(cert)
@@ -102,21 +108,11 @@ func ReceiveCommit(ctx context.Context, conf *config.Config, req *common.PBFTReq
 		return err
 	}
 
-	err = AddPrepareMessages(conf, req)
+	err = AddCommitMessages(conf, req)
 	if err != nil {
 		return err
 	}
-
-	dbTxn, err := datastore.GetTransactionByTxnID(conf.DataStore, txnReq.TxnID)
-	if err != nil {
-		return err
-	}
-	dbTxn.Status = StatusCommitted
-	err = datastore.UpdateTransactionStatus(conf.DataStore, dbTxn)
-	if err != nil {
-		return err
-	}
-
+	
 	err = ExecuteTxn(conf, txnReq)
 	if err != nil {
 		return nil

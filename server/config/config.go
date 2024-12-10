@@ -32,6 +32,9 @@ type Config struct {
 	DataItemsPerShard   int32
 	IsAlive             bool
 
+	//TxnQueueLock sync.Mutex
+	//TxnQueue     *TxnQueueInfo
+
 	PublicKeys *KeyPool.KeyPool
 	PrivateKey *rsa.PrivateKey
 

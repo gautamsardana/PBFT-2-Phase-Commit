@@ -30,14 +30,14 @@ func SendPrepareResponse(conf *config.Config, req *common.PBFTRequestResponse, t
 		return nil, err
 	}
 
-	prepareReq := &common.PBFTRequestResponse{
+	commitReq := &common.PBFTRequestResponse{
 		SignedMessage: signedMsgBytes,
 		Sign:          sign,
 		ServerNo:      conf.ServerNumber,
 		TxnRequest:    req.TxnRequest,
 	}
 
-	return prepareReq, nil
+	return commitReq, nil
 }
 
 func VerifyPrepare(ctx context.Context, conf *config.Config, req *common.PBFTRequestResponse, txnReq *common.TxnRequest) error {
@@ -84,7 +84,7 @@ func VerifyPrepare(ctx context.Context, conf *config.Config, req *common.PBFTReq
 	return nil
 }
 
-func AddPrePrepareMessages(conf *config.Config, req *common.PBFTRequestResponse) error {
+func AddPrepareMessages(conf *config.Config, req *common.PBFTRequestResponse) error {
 	cert := &common.Certificate{}
 	err := json.Unmarshal(req.SignedMessage, cert)
 	if err != nil {

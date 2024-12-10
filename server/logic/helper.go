@@ -31,14 +31,18 @@ const (
 	StatusExecuted          = "Executed"
 	StatusPreparedToExecute = "PreparedToExecute"
 	StatusSuccess           = "Success"
-	StatusRolledBack        = "RolledBack"
+	StatusAborted           = "Aborted"
 	StatusFailed            = "Failed"
 )
 
 const (
-	MessageTypePrePrepare = "Pre-Prepare"
-	MessageTypePrepare    = "Prepare"
-	MessageTypeCommit     = "Commit"
+	MessageTypePrePrepare                  = "Pre-Prepare"
+	MessageTypePrepare                     = "Prepare"
+	MessageTypeCommit                      = "Commit"
+	MessageTypeTwoPCPrepareFromCoordinator = "TwoPC-Prepare-Coordinator"
+	MessageTypeTwoPCPrepareFromParticipant = "TwoPC-Prepare-Participant"
+	MessageTypeTwoPCCommitFromCoordinator  = "TwoPC-Commit-Coordinator"
+	MessageTypeTwoPCCommitFromParticipant  = "TwoPC-Commit-Participant"
 )
 
 func SignMessage(privateKey *rsa.PrivateKey, message []byte) ([]byte, error) {
@@ -101,30 +105,16 @@ func GetTxnDigest(req *common.TxnRequest) string {
 	return dHex
 }
 
-func AcquireLockWithAbort(conf *config.Config, req *common.TxnRequest) error {
-	if req.Type == TypeIntraShard || req.Type == TypeCrossShardSender {
-		if !conf.UserLocks[req.Sender%conf.DataItemsPerShard].TryLock() {
-			return errors.New("lock not available for sender")
-		}
-	}
-	if req.Type == TypeIntraShard || req.Type == TypeCrossShardReceiver {
-		if !conf.UserLocks[req.Receiver%conf.DataItemsPerShard].TryLock() {
-			return errors.New("lock not available receiver")
-		}
-	}
-	return nil
-}
-
 func HandlePBFTResponse(conf *config.Config, resp *common.PBFTRequestResponse, messageType string) {
 	if resp == nil {
-		fmt.Printf("HandlePrePrepareResponse error: resp nil\n")
+		fmt.Printf("HandlePBFTResponse error: resp nil\n")
 		return
 	}
 
 	txnReq := &common.TxnRequest{}
 	err := json.Unmarshal(resp.TxnRequest, txnReq)
 	if err != nil {
-		fmt.Printf("HandlePrePrepareResponse: error %v\n", err)
+		fmt.Printf("HandlePBFTResponse: error %v\n", err)
 		return
 	}
 
@@ -139,8 +129,22 @@ func HandlePBFTResponse(conf *config.Config, resp *common.PBFTRequestResponse, m
 
 	err = datastore.InsertPBFTMessage(conf.DataStore, pbftMessage)
 	if err != nil {
-		fmt.Printf("HandlePrePrepareResponse: error %v\n", err)
+		fmt.Printf("HandlePBFTResponse: error %v\n", err)
 	}
+}
+
+func AcquireLockWithAbort(conf *config.Config, req *common.TxnRequest) error {
+	if req.Type == TypeIntraShard || req.Type == TypeCrossShardSender {
+		if !conf.UserLocks[req.Sender%conf.DataItemsPerShard].TryLock() {
+			return errors.New("lock not available for sender")
+		}
+	}
+	if req.Type == TypeIntraShard || req.Type == TypeCrossShardReceiver {
+		if !conf.UserLocks[req.Receiver%conf.DataItemsPerShard].TryLock() {
+			return errors.New("lock not available for receiver")
+		}
+	}
+	return nil
 }
 
 func AcquireLock(conf *config.Config, req *common.TxnRequest) error {
@@ -197,4 +201,12 @@ func SendReplyToClient(conf *config.Config, txn *common.TxnRequest) {
 
 func GetClientAddress() string {
 	return "localhost:8000"
+}
+
+func GetLeaderNumber(conf *config.Config) int32 {
+	leaderNo := conf.PBFT.GetViewNumber() % conf.ServerTotal
+	if leaderNo == 0 {
+		leaderNo = conf.ServerTotal
+	}
+	return leaderNo
 }

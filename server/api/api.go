@@ -69,6 +69,42 @@ func (s *Server) Commit(ctx context.Context, req *common.PBFTRequestResponse) (*
 	return nil, nil
 }
 
+func (s *Server) TwoPCPrepareRequest(ctx context.Context, req *common.PBFTRequestResponse) (*emptypb.Empty, error) {
+	err := logic.ReceiveTwoPCPrepare(ctx, s.Config, req)
+	if err != nil {
+		fmt.Printf("TwoPCPrepareRequestError: %v\n", err)
+		return nil, err
+	}
+	return nil, nil
+}
+
+func (s *Server) TwoPCPrepareResponse(ctx context.Context, req *common.PBFTRequestResponse) (*emptypb.Empty, error) {
+	err := logic.ReceiveTwoPCResponse(ctx, s.Config, req)
+	if err != nil {
+		fmt.Printf("ReceiveTwoPCResponseError: %v\n", err)
+		return nil, err
+	}
+	return nil, nil
+}
+
+func (s *Server) TwoPCCommit(ctx context.Context, req *common.PBFTRequestResponse) (*emptypb.Empty, error) {
+	err := logic.Commit(ctx, s.Config, req)
+	if err != nil {
+		fmt.Printf("TwoPCCommitError: %v\n", err)
+		return nil, err
+	}
+	return nil, nil
+}
+
+func (s *Server) TwoPCAbort(ctx context.Context, req *common.PBFTRequestResponse) (*emptypb.Empty, error) {
+	err := logic.Abort(ctx, s.Config, req)
+	if err != nil {
+		fmt.Printf("TwoPCAbortError: %v\n", err)
+		return nil, err
+	}
+	return nil, nil
+}
+
 func (s *Server) PrintBalance(ctx context.Context, req *common.PrintBalanceRequest) (*common.PrintBalanceResponse, error) {
 	fmt.Printf("received PrintBalance request\n")
 	resp, err := logic.PrintBalance(ctx, s.Config, req)

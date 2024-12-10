@@ -1,9 +1,5 @@
 package logic
 
-import (
-	"GolandProjects/2pcbyz-gautamsardana/client/config"
-)
-
 const (
 	EmptyString            = ""
 	StatusSuccess          = "Success"
@@ -41,15 +37,4 @@ var mapServerNoToServerAddr = map[int32]string{
 	10: "localhost:8090",
 	11: "localhost:8091",
 	12: "localhost:8092",
-}
-
-func GetContactServerForCluster(conf *config.Config, cluster int32, contactServers []string) string {
-	for _, serverNo := range conf.MapClusterToServers[cluster] {
-		for _, contactServer := range contactServers {
-			if mapServerToServerNo[contactServer] == serverNo {
-				return mapServerNoToServerAddr[serverNo]
-			}
-		}
-	}
-	return ""
 }

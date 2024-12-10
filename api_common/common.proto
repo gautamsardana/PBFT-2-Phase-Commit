@@ -19,8 +19,10 @@ service Byz2PC {
   rpc Prepare(common.PBFTRequestResponse) returns (common.PBFTRequestResponse);
   rpc Commit(common.PBFTRequestResponse) returns (google.protobuf.Empty);
 
-  rpc TwoPCCommit(common.TxnRequest) returns (common.ProcessTxnResponse);
-  rpc TwoPCAbort(common.TxnRequest) returns (common.ProcessTxnResponse);
+  rpc TwoPCPrepareRequest(common.PBFTRequestResponse) returns (google.protobuf.Empty);
+  rpc TwoPCPrepareResponse(common.PBFTRequestResponse) returns (google.protobuf.Empty);
+  rpc TwoPCCommit(common.PBFTRequestResponse) returns (google.protobuf.Empty);
+  rpc TwoPCAbort(common.PBFTRequestResponse) returns (google.protobuf.Empty);
 
   rpc Performance(google.protobuf.Empty) returns (PerformanceResponse);
   rpc PrintBalance(PrintBalanceRequest) returns (PrintBalanceResponse);
@@ -33,16 +35,17 @@ message ClusterDistribution {
 
 message UpdateServerStateRequest{
   bool IsAlive = 1;
-  int32 ClusterNumber = 2;
-  int32 DataItemsPerShard = 3;
-  map<int32, ClusterDistribution> Clusters = 4;
+  bool IsByzantine = 2;
+  int32 ClusterNumber = 3;
+  int32 DataItemsPerShard = 4;
+  map<int32, ClusterDistribution> Clusters = 5;
 }
 
 message TxnSet {
   int32 SetNo = 1;
   repeated TxnRequest Txns = 2;
   repeated string LiveServers = 3;
-  repeated string ContactServers = 4;
+  repeated string ByzantineServers = 4;
 }
 
 message TxnRequest {
@@ -77,7 +80,6 @@ message PBFTRequestResponse{
   bytes TxnRequest = 3;
   int32 ServerNo = 4;
 }
-
 
 message PBFTMessage{
   string TxnID = 1;
