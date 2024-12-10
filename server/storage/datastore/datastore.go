@@ -36,7 +36,9 @@ func UpdateBalance(tx *sql.DB, user User) error {
 
 func GetTransactionByTxnID(db *sql.DB, txnID string) (*common.TxnRequest, error) {
 	transaction := &common.TxnRequest{}
-	query := `SELECT txn_id, sender, receiver, amount, seq_no, view_no, type, status FROM transaction WHERE txn_id = ?`
+	var createdAt time.Time
+
+	query := `SELECT txn_id, sender, receiver, amount, seq_no, view_no, type, status, digest, error, created_at FROM transaction WHERE txn_id = ?`
 	err := db.QueryRow(query, txnID).Scan(
 		&transaction.TxnID,
 		&transaction.Sender,
@@ -46,10 +48,15 @@ func GetTransactionByTxnID(db *sql.DB, txnID string) (*common.TxnRequest, error)
 		&transaction.ViewNo,
 		&transaction.Type,
 		&transaction.Status,
+		&transaction.Digest,
+		&transaction.Error,
+		&createdAt,
 	)
 	if err != nil {
 		return nil, err
 	}
+	transaction.CreatedAt = timestamppb.New(createdAt)
+
 	return transaction, nil
 }
 
@@ -98,11 +105,11 @@ func GetTransactionsAfterSequence(db *sql.DB, term int32) ([]*common.TxnRequest,
 	return transactions, nil
 }
 
-func GetCommittedTxns(db *sql.DB) ([]*common.TxnRequest, error) {
+func GetExecutedTxns(db *sql.DB) ([]*common.TxnRequest, error) {
 	var transactions []*common.TxnRequest
 	var createdAt time.Time
 
-	query := `SELECT txn_id, sender, receiver, amount, seq_no, view_no, type, status, digest, error, created_at FROM transaction WHERE status = 'committed' ORDER BY seq_no`
+	query := `SELECT txn_id, sender, receiver, amount, seq_no, view_no, type, status, digest, error, created_at FROM transaction WHERE status = 'Executed' ORDER BY seq_no`
 	rows, err := db.Query(query)
 	if err != nil {
 		return nil, err
@@ -112,7 +119,7 @@ func GetCommittedTxns(db *sql.DB) ([]*common.TxnRequest, error) {
 	for rows.Next() {
 		var txn common.TxnRequest
 		if err = rows.Scan(&txn.TxnID, &txn.Sender, &txn.Receiver, &txn.Amount, &txn.SeqNo, &txn.ViewNo,
-			&txn.Type, &txn.Status, &txn.Digest, &txn.Error, createdAt); err != nil {
+			&txn.Type, &txn.Status, &txn.Digest, &txn.Error, &createdAt); err != nil {
 			return nil, err
 		}
 		txn.CreatedAt = timestamppb.New(createdAt)
@@ -142,11 +149,14 @@ func GetPBFTMessages(db *sql.DB, txnID, messagesType string) ([]*common.PBFTMess
 	}
 
 	var messages []*common.PBFTMessage
+	var createdAt time.Time
+
 	for rows.Next() {
 		var message common.PBFTMessage
-		if err = rows.Scan(&message.TxnID, &message.MessageType, &message.Sender, &message.Sign, &message.Payload, &message.CreatedAt); err != nil {
+		if err = rows.Scan(&message.TxnID, &message.MessageType, &message.Sender, &message.Sign, &message.Payload, &createdAt); err != nil {
 			return nil, err
 		}
+		message.CreatedAt = timestamppb.New(createdAt)
 		messages = append(messages, &message)
 	}
 	if err = rows.Err(); err != nil {

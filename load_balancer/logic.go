@@ -23,7 +23,7 @@ func PrintDB(client common.Byz2PCClient, server int32) {
 		return
 	}
 
-	fmt.Printf("\nCommitted DB txns of server %v: \n", server)
+	fmt.Printf("\nExecuted DB txns of server %v: \n", server)
 	for _, txn := range resp.Txns {
 		fmt.Printf("%v\n", txn)
 	}

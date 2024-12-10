@@ -44,6 +44,7 @@ func ProcessTxn(ctx context.Context, conf *config.Config, req *common.TxnRequest
 	lockErr := AcquireLockWithAbort(conf, req)
 	if lockErr != nil {
 		UpdateTxnFailed(conf, req, lockErr)
+		SendReplyToClient(conf, req)
 		return lockErr
 	}
 

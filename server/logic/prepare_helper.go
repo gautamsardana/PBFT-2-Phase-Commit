@@ -31,7 +31,7 @@ func SendPrepareResponse(conf *config.Config, req *common.PBFTRequestResponse, t
 	}
 
 	prepareReq := &common.PBFTRequestResponse{
-		SignedMessage: req.SignedMessage,
+		SignedMessage: signedMsgBytes,
 		Sign:          sign,
 		ServerNo:      conf.ServerNumber,
 		TxnRequest:    req.TxnRequest,

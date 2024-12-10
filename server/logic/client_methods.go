@@ -17,9 +17,9 @@ func PrintBalance(ctx context.Context, conf *config.Config, req *common.PrintBal
 }
 
 func PrintDB(ctx context.Context, conf *config.Config, req *common.PrintDBRequest) (*common.PrintDBResponse, error) {
-	committedTxns, err := datastore.GetCommittedTxns(conf.DataStore)
+	executedTxns, err := datastore.GetExecutedTxns(conf.DataStore)
 	if err != nil {
 		return nil, err
 	}
-	return &common.PrintDBResponse{Txns: committedTxns}, err
+	return &common.PrintDBResponse{Txns: executedTxns}, err
 }

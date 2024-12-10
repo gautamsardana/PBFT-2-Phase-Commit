@@ -172,11 +172,17 @@ func UpdateTxnFailed(conf *config.Config, req *common.TxnRequest, err error) {
 }
 
 func SendReplyToClient(conf *config.Config, txn *common.TxnRequest) {
-	response := &common.ProcessTxnResponse{
-		Txn:    txn,
-		Status: txn.Status,
-		Error:  txn.Error,
+	dbTxn, err := datastore.GetTransactionByTxnID(conf.DataStore, txn.TxnID)
+	if err != nil {
+		fmt.Println("SendReplyToClient error:", err)
 	}
+
+	response := &common.ProcessTxnResponse{
+		Txn:    dbTxn,
+		Status: dbTxn.Status,
+		Error:  dbTxn.Error,
+	}
+	fmt.Printf("sending reply back to client txn with resp: %v\n", response)
 
 	client, err := conf.Pool.GetServer(GetClientAddress())
 	if err != nil {
@@ -184,7 +190,7 @@ func SendReplyToClient(conf *config.Config, txn *common.TxnRequest) {
 	}
 	_, err = client.Callback(context.Background(), response)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("SendReplyToClient error:", err)
 	}
 	return
 }

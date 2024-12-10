@@ -39,15 +39,10 @@ func VerifyPBFTMessage(ctx context.Context, conf *config.Config, req *common.PBF
 		return errors.New("invalid digest")
 	}
 
-	if messageType == MessageTypePrePrepare {
-		if signedMessage.SequenceNumber > conf.PBFT.GetSequenceNumber() {
-			conf.PBFT.SetSequenceNumber(signedMessage.SequenceNumber)
-		} else {
-			fmt.Println(signedMessage.SequenceNumber, conf.PBFT.GetSequenceNumber())
-			return errors.New("invalid sequence number")
-		}
+	if messageType == MessageTypePrePrepare && signedMessage.SequenceNumber > conf.PBFT.GetSequenceNumber() {
+		conf.PBFT.SetSequenceNumber(signedMessage.SequenceNumber)
 	} else {
-		if signedMessage.SequenceNumber != conf.PBFT.GetSequenceNumber() {
+		if signedMessage.SequenceNumber != txnReq.SeqNo {
 			return errors.New("invalid sequence number")
 		}
 	}

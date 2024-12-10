@@ -73,6 +73,8 @@ func AddPrepareMessages(conf *config.Config, req *common.PBFTRequestResponse) er
 }
 
 func ExecuteTxn(conf *config.Config, txnReq *common.TxnRequest) error {
+	fmt.Printf("executing txn for request: %v\n", txnReq)
+
 	senderBalance, err := datastore.GetBalance(conf.DataStore, txnReq.Sender)
 	if err != nil {
 		return err

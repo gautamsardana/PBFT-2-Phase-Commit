@@ -20,11 +20,11 @@ CREATE TABLE `transaction` (
   `type` varchar(255) NOT NULL,
   `status` varchar(255) DEFAULT NULL,
   `digest` varchar(255) DEFAULT NULL,
-  `error` varchar(255) DEFAULT NULL,
+  `error` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT '',
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_txnid` (`txn_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4818 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4860 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 
 CREATE TABLE pbft_messages (
     `txn_id` varchar(255) NOT NULL,
