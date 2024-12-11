@@ -37,6 +37,19 @@ func Performance(client common.Byz2PCClient) {
 	}
 	latency := resp.Latency.AsDuration()
 
+	fmt.Printf("Total transactions: %d\n", resp.TxnCount)
+	fmt.Printf("Total Latency till now: %s\n", latency)
+	fmt.Printf("Throughput: %.2f transactions/sec\n", resp.Throughput)
+}
+
+func Benchmark(client common.Byz2PCClient, txnNumber int) {
+	resp, err := client.Benchmark(context.Background(), &common.BenchmarkRequest{TxnNumber: int32(txnNumber)})
+	if err != nil {
+		fmt.Println("Error:", err)
+	}
+	latency := resp.Latency.AsDuration()
+
+	fmt.Printf("Total transactions: %d\n", resp.TxnCount)
 	fmt.Printf("Total Latency till now: %s\n", latency)
 	fmt.Printf("Throughput: %.2f transactions/sec\n", resp.Throughput)
 }

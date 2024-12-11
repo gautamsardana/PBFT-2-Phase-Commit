@@ -60,6 +60,8 @@ func ProcessTxnSet(ctx context.Context, req *common.TxnSet, conf *config.Config)
 		fmt.Println("processing", txn, "\n")
 		senderCluster := math.Ceil(float64(txn.Sender) / float64(conf.DataItemsPerShard))
 
+		conf.TxnCount++
+
 		ProcessTxn(conf, txn, int32(senderCluster))
 	}
 	return nil

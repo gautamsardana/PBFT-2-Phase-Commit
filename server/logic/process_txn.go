@@ -14,17 +14,6 @@ import (
 	"GolandProjects/2pcbyz-gautamsardana/server/storage/datastore"
 )
 
-//func EnqueueTxn(_ context.Context, conf *config.Config, req *common.TxnRequest) {
-//	fmt.Printf("received enqueue txn request:%v\n", req)
-//	conf.TxnQueueLock.Lock()
-//	conf.TxnQueue.Queue = append(conf.TxnQueue.Queue, req)
-//	conf.TxnQueueLock.Unlock()
-//
-//	if len(conf.TxnQueue.Queue) == 1 {
-//		conf.TxnQueue.Signal <- struct{}{}
-//	}
-//}
-
 func ProcessTxn(ctx context.Context, conf *config.Config, req *common.TxnRequest) error {
 	fmt.Printf("Received ProcessTxn request: %v\n", req)
 
@@ -51,6 +40,7 @@ func ProcessTxn(ctx context.Context, conf *config.Config, req *common.TxnRequest
 		if err != nil {
 			UpdateTxnFailed(conf, req, err)
 			ReleaseLock(conf, req)
+			SendReplyToClient(conf, req)
 		}
 	}()
 

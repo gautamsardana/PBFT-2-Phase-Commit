@@ -19,7 +19,7 @@ func SendPrepare(conf *config.Config, req *common.TxnRequest) error {
 	if err != nil {
 		return err
 	}
-	if len(prepareMessages) < int(conf.Majority) {
+	if len(prepareMessages) < int(conf.Majority)-1 {
 		return errors.New("not enough prepare messages")
 	}
 
@@ -104,7 +104,7 @@ func ReceivePrepare(ctx context.Context, conf *config.Config, req *common.PBFTRe
 		}
 	}()
 
-	fmt.Printf("Received Prepared for request: %v\n", txnReq)
+	fmt.Printf("Received Prepare for request: %v\n", txnReq)
 	err = VerifyPrepare(ctx, conf, req, txnReq)
 	if err != nil {
 		return nil, err

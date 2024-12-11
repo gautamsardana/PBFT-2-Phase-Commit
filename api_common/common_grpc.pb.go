@@ -34,6 +34,7 @@ const (
 	Byz2PC_Performance_FullMethodName          = "/common.Byz2PC/Performance"
 	Byz2PC_PrintBalance_FullMethodName         = "/common.Byz2PC/PrintBalance"
 	Byz2PC_PrintDB_FullMethodName              = "/common.Byz2PC/PrintDB"
+	Byz2PC_Benchmark_FullMethodName            = "/common.Byz2PC/Benchmark"
 )
 
 // Byz2PCClient is the client API for Byz2PC service.
@@ -54,6 +55,7 @@ type Byz2PCClient interface {
 	Performance(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PerformanceResponse, error)
 	PrintBalance(ctx context.Context, in *PrintBalanceRequest, opts ...grpc.CallOption) (*PrintBalanceResponse, error)
 	PrintDB(ctx context.Context, in *PrintDBRequest, opts ...grpc.CallOption) (*PrintDBResponse, error)
+	Benchmark(ctx context.Context, in *BenchmarkRequest, opts ...grpc.CallOption) (*PerformanceResponse, error)
 }
 
 type byz2PCClient struct {
@@ -204,6 +206,16 @@ func (c *byz2PCClient) PrintDB(ctx context.Context, in *PrintDBRequest, opts ...
 	return out, nil
 }
 
+func (c *byz2PCClient) Benchmark(ctx context.Context, in *BenchmarkRequest, opts ...grpc.CallOption) (*PerformanceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PerformanceResponse)
+	err := c.cc.Invoke(ctx, Byz2PC_Benchmark_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Byz2PCServer is the server API for Byz2PC service.
 // All implementations must embed UnimplementedByz2PCServer
 // for forward compatibility.
@@ -222,6 +234,7 @@ type Byz2PCServer interface {
 	Performance(context.Context, *emptypb.Empty) (*PerformanceResponse, error)
 	PrintBalance(context.Context, *PrintBalanceRequest) (*PrintBalanceResponse, error)
 	PrintDB(context.Context, *PrintDBRequest) (*PrintDBResponse, error)
+	Benchmark(context.Context, *BenchmarkRequest) (*PerformanceResponse, error)
 	mustEmbedUnimplementedByz2PCServer()
 }
 
@@ -273,6 +286,9 @@ func (UnimplementedByz2PCServer) PrintBalance(context.Context, *PrintBalanceRequ
 }
 func (UnimplementedByz2PCServer) PrintDB(context.Context, *PrintDBRequest) (*PrintDBResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PrintDB not implemented")
+}
+func (UnimplementedByz2PCServer) Benchmark(context.Context, *BenchmarkRequest) (*PerformanceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Benchmark not implemented")
 }
 func (UnimplementedByz2PCServer) mustEmbedUnimplementedByz2PCServer() {}
 func (UnimplementedByz2PCServer) testEmbeddedByValue()                {}
@@ -547,6 +563,24 @@ func _Byz2PC_PrintDB_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Byz2PC_Benchmark_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BenchmarkRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(Byz2PCServer).Benchmark(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Byz2PC_Benchmark_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(Byz2PCServer).Benchmark(ctx, req.(*BenchmarkRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Byz2PC_ServiceDesc is the grpc.ServiceDesc for Byz2PC service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -609,6 +643,10 @@ var Byz2PC_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PrintDB",
 			Handler:    _Byz2PC_PrintDB_Handler,
+		},
+		{
+			MethodName: "Benchmark",
+			Handler:    _Byz2PC_Benchmark_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

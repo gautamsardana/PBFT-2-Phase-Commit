@@ -70,9 +70,10 @@ func InsertTransaction(db *sql.DB, transaction *common.TxnRequest) error {
 	return nil
 }
 
-func UpdateTransactionStatus(tx *sql.DB, transaction *common.TxnRequest) error {
+func UpdateTransactionStatus(db *sql.DB, transaction *common.TxnRequest) error {
 	query := `UPDATE transaction SET status = ?, error = ? WHERE txn_id = ?`
-	_, err := tx.Exec(query, transaction.Status, transaction.Error, transaction.TxnID)
+	_, err := db.Exec(query, transaction.Status, transaction.Error, transaction.TxnID)
+
 	if err != nil {
 		return err
 	}
@@ -147,6 +148,8 @@ func GetPBFTMessages(db *sql.DB, txnID, messagesType string) ([]*common.PBFTMess
 	if err != nil {
 		return nil, err
 	}
+
+	defer rows.Close()
 
 	var messages []*common.PBFTMessage
 	var createdAt time.Time

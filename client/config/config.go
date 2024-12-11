@@ -32,6 +32,7 @@ type Config struct {
 	TxnQueueLock sync.Mutex
 	TxnStartTime map[string]time.Time
 	LatencyQueue []time.Duration
+	TxnCount     int32
 }
 
 func GetConfig() *Config {

@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"sync"
+	"time"
 
 	KeyPool "GolandProjects/2pcbyz-gautamsardana/key_pool"
 	serverPool "GolandProjects/2pcbyz-gautamsardana/server_pool"
@@ -109,6 +110,9 @@ func SetupDB(config *Config) {
 	}
 	config.DataStore = db
 	fmt.Println("MySQL Connected!!")
+	db.SetMaxOpenConns(1001)
+	db.SetMaxIdleConns(50)
+	db.SetConnMaxLifetime(5 * time.Minute)
 }
 
 var MapServerNumberToAddress = map[int32]string{

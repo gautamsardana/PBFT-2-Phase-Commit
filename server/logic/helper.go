@@ -118,6 +118,8 @@ func HandlePBFTResponse(conf *config.Config, resp *common.PBFTRequestResponse, m
 		return
 	}
 
+	fmt.Printf("received %s response from server %d for txn request: %v\n", messageType, resp.ServerNo, txnReq.TxnID)
+
 	pbftMessage := &common.PBFTMessage{
 		TxnID:       txnReq.TxnID,
 		MessageType: messageType,

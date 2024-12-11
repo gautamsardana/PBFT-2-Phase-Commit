@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 
 	common "GolandProjects/2pcbyz-gautamsardana/api_common"
 	"GolandProjects/2pcbyz-gautamsardana/server/config"
@@ -51,8 +50,6 @@ func VerifyPBFTMessage(ctx context.Context, conf *config.Config, req *common.PBF
 }
 
 func SendPrePrepareResponse(conf *config.Config, req *common.PBFTRequestResponse) (*common.PBFTRequestResponse, error) {
-	fmt.Printf("Sending PrePrepare response\n")
-
 	sign, err := SignMessage(conf.PrivateKey, req.SignedMessage)
 	if err != nil {
 		return nil, err

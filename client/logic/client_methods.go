@@ -2,9 +2,11 @@ package logic
 
 import (
 	"context"
-	"fmt"
+	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"log"
 	"math"
+	"math/rand"
 	"time"
 
 	common "GolandProjects/2pcbyz-gautamsardana/api_common"
@@ -48,9 +50,8 @@ func PrintDB(ctx context.Context, req *common.PrintDBRequest, conf *config.Confi
 }
 
 func Performance(_ context.Context, conf *config.Config) (*common.PerformanceResponse, error) {
-	fmt.Println(conf.LatencyQueue)
-
 	var totalLatency time.Duration
+
 	completedTxns := len(conf.LatencyQueue)
 	for i := 0; i < completedTxns; i++ {
 		totalLatency += conf.LatencyQueue[i]
@@ -62,8 +63,41 @@ func Performance(_ context.Context, conf *config.Config) (*common.PerformanceRes
 	}
 
 	resp := &common.PerformanceResponse{
+		TxnCount:   conf.TxnCount,
 		Latency:    durationpb.New(totalLatency),
 		Throughput: float32(throughput),
 	}
 	return resp, nil
+}
+
+func Benchmark(_ context.Context, conf *config.Config, req *common.BenchmarkRequest) (*common.PerformanceResponse, error) {
+	rand.Seed(time.Now().UnixNano())
+
+	for i := 0; i < int(req.TxnNumber); i++ {
+		sender := rand.Intn(1000) + 1
+		receiver := rand.Intn(1000) + 1
+		for receiver == sender {
+			receiver = rand.Intn(1000) + 1
+		}
+
+		// amount 0 to 10
+		amount := float32(rand.Intn(10) + 1)
+		txnID, err := uuid.NewRandom()
+		if err != nil {
+			log.Fatalf("failed to generate UUID: %v", err)
+		}
+
+		txn := &common.TxnRequest{
+			TxnID:    txnID.String(),
+			Sender:   int32(sender),
+			Receiver: int32(receiver),
+			Amount:   amount,
+		}
+
+		senderCluster := math.Ceil(float64(txn.Sender) / float64(conf.DataItemsPerShard))
+		ProcessTxn(conf, txn, int32(senderCluster))
+		conf.TxnCount++
+	}
+
+	return Performance(nil, conf)
 }

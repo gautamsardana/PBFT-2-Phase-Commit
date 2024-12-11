@@ -116,7 +116,8 @@ func main() {
 			fmt.Println("\nType 'next' to process the next set, " +
 				"'balance' to get balance, " +
 				"'db' to print database, " +
-				" or 'perf' to print performance")
+				" 'perf' to print performance" +
+				" or 'bench' to print benchmark metrics")
 			scanner.Scan()
 			input := scanner.Text()
 			if input == "next" {
@@ -138,7 +139,12 @@ func main() {
 
 			} else if input == "perf" {
 				Performance(client)
-
+			} else if input == "bench" {
+				fmt.Println("How many transactions? (eg. 1000)")
+				scanner.Scan()
+				txnNumberString := scanner.Text()
+				txnNumber, _ := strconv.Atoi(txnNumberString)
+				Benchmark(client, txnNumber)
 			} else {
 				fmt.Println("Unknown command")
 			}

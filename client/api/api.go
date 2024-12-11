@@ -55,3 +55,12 @@ func (c *Client) Performance(ctx context.Context, _ *emptypb.Empty) (*common.Per
 	}
 	return resp, nil
 }
+
+func (c *Client) Benchmark(ctx context.Context, req *common.BenchmarkRequest) (*common.PerformanceResponse, error) {
+	resp, err := logic.Benchmark(ctx, c.Config, req)
+	if err != nil {
+		fmt.Printf("Error evaluating benchmark metrics: %v", err)
+		return nil, err
+	}
+	return resp, nil
+}

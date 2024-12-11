@@ -27,6 +27,7 @@ service Byz2PC {
   rpc Performance(google.protobuf.Empty) returns (PerformanceResponse);
   rpc PrintBalance(PrintBalanceRequest) returns (PrintBalanceResponse);
   rpc PrintDB(PrintDBRequest) returns (PrintDBResponse);
+  rpc Benchmark(BenchmarkRequest) returns (PerformanceResponse);
 }
 
 message ClusterDistribution {
@@ -99,6 +100,7 @@ message Certificate {
 message PerformanceResponse{
   google.protobuf.Duration Latency = 1;
   float Throughput = 2;
+  int32 TxnCount = 3;
 }
 
 message PrintBalanceRequest{
@@ -116,4 +118,8 @@ message PrintDBRequest{
 
 message PrintDBResponse{
   repeated TxnRequest Txns = 1;
+}
+
+message BenchmarkRequest{
+  int32 TxnNumber = 1;
 }

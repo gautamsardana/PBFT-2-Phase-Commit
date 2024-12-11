@@ -127,5 +127,6 @@ func ReceivePrePrepare(ctx context.Context, conf *config.Config, req *common.PBF
 		return nil, err
 	}
 
+	fmt.Printf("Sending pre-prepare response for txn:%s\n", txnReq.TxnID)
 	return SendPrePrepareResponse(conf, req)
 }

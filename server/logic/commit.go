@@ -19,7 +19,7 @@ func SendCommit(conf *config.Config, req *common.TxnRequest) error {
 	if err != nil {
 		return err
 	}
-	if len(commitMessages) < int(conf.Majority) {
+	if len(commitMessages) < int(conf.Majority)-1 {
 		return errors.New("not enough commit messages")
 	}
 
