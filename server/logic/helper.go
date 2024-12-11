@@ -203,10 +203,8 @@ func GetClientAddress() string {
 	return "localhost:8000"
 }
 
-func GetLeaderNumber(conf *config.Config) int32 {
-	leaderNo := conf.PBFT.GetViewNumber() % conf.ServerTotal
-	if leaderNo == 0 {
-		leaderNo = conf.ServerTotal
-	}
-	return leaderNo
+func GetLeaderNumber(conf *config.Config, clusterNumber int32) int32 {
+	servers := conf.MapClusterToServers[clusterNumber]
+	leaderIndex := (conf.PBFT.GetViewNumber() - 1) % int32(len(servers))
+	return servers[leaderIndex]
 }

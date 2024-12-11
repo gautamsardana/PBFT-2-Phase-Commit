@@ -20,6 +20,7 @@ type Server struct {
 func (s *Server) UpdateServerState(ctx context.Context, req *common.UpdateServerStateRequest) (*emptypb.Empty, error) {
 	fmt.Printf("isAlive set to %t\n", req.IsAlive)
 	s.Config.IsAlive = req.IsAlive
+	s.Config.IsByzantine = req.IsByzantine
 	s.Config.ClusterNumber = req.ClusterNumber
 	s.Config.DataItemsPerShard = req.DataItemsPerShard
 

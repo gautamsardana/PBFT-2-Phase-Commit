@@ -13,7 +13,7 @@ import (
 )
 
 func SendPrePrepare(conf *config.Config, req *common.TxnRequest) error {
-	fmt.Printf("Sending Prepare with request: %v\n", req)
+	fmt.Printf("Sending pre-prepare with request: %v\n", req)
 
 	signedReq := &common.SignedMessage{
 		ViewNumber:     req.ViewNo,

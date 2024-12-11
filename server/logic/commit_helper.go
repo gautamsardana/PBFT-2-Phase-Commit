@@ -75,25 +75,29 @@ func AddCommitMessages(conf *config.Config, req *common.PBFTRequestResponse) err
 func ExecuteTxn(conf *config.Config, txnReq *common.TxnRequest) error {
 	fmt.Printf("executing txn for request: %v\n", txnReq)
 
-	senderBalance, err := datastore.GetBalance(conf.DataStore, txnReq.Sender)
-	if err != nil {
-		return err
-	}
-	updatedSenderBalance := senderBalance - txnReq.Amount
-	err = datastore.UpdateBalance(conf.DataStore, datastore.User{User: txnReq.Sender, Balance: updatedSenderBalance})
-	if err != nil {
-		return err
+	if txnReq.Type == TypeIntraShard || txnReq.Type == TypeCrossShardSender {
+		senderBalance, err := datastore.GetBalance(conf.DataStore, txnReq.Sender)
+		if err != nil {
+			return err
+		}
+		updatedSenderBalance := senderBalance - txnReq.Amount
+		err = datastore.UpdateBalance(conf.DataStore, datastore.User{User: txnReq.Sender, Balance: updatedSenderBalance})
+		if err != nil {
+			return err
+		}
 	}
 
-	receiverBalance, err := datastore.GetBalance(conf.DataStore, txnReq.Receiver)
-	if err != nil {
-		return err
-	}
-	updatedReceiverBalance := receiverBalance + txnReq.Amount
+	if txnReq.Type == TypeIntraShard || txnReq.Type == TypeCrossShardReceiver {
+		receiverBalance, err := datastore.GetBalance(conf.DataStore, txnReq.Receiver)
+		if err != nil {
+			return err
+		}
+		updatedReceiverBalance := receiverBalance + txnReq.Amount
 
-	err = datastore.UpdateBalance(conf.DataStore, datastore.User{User: txnReq.Receiver, Balance: updatedReceiverBalance})
-	if err != nil {
-		return err
+		err = datastore.UpdateBalance(conf.DataStore, datastore.User{User: txnReq.Receiver, Balance: updatedReceiverBalance})
+		if err != nil {
+			return err
+		}
 	}
 
 	dbTxn, err := datastore.GetTransactionByTxnID(conf.DataStore, txnReq.TxnID)

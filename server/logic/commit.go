@@ -112,14 +112,16 @@ func ReceiveCommit(ctx context.Context, conf *config.Config, req *common.PBFTReq
 	if err != nil {
 		return err
 	}
-	
+
 	err = ExecuteTxn(conf, txnReq)
 	if err != nil {
 		return nil
 	}
 	ReleaseLock(conf, txnReq)
 
-	go SendReplyToClient(conf, txnReq)
+	if txnReq.Type == TypeIntraShard {
+		go SendReplyToClient(conf, txnReq)
+	}
 
 	return nil
 }

@@ -13,21 +13,20 @@ import (
 )
 
 func ReceiveTwoPCPrepare(ctx context.Context, conf *config.Config, req *common.PBFTRequestResponse) error {
-	fmt.Printf("received request from coordinator cluster with request: %v\n", req)
-
 	//todo: verify these messages
 	txnReq := &common.TxnRequest{}
 	err := json.Unmarshal(req.TxnRequest, txnReq)
 	if err != nil {
 		return err
 	}
+	fmt.Printf("received request from coordinator cluster with request: %v\n", txnReq)
 
 	err = AddTwoPCMessages(conf, req, MessageTypeTwoPCPrepareFromCoordinator)
 	if err != nil {
 		return err
 	}
 
-	if GetLeaderNumber(conf) != conf.ServerNumber {
+	if GetLeaderNumber(conf, conf.ClusterNumber) != conf.ServerNumber {
 		return nil
 	}
 

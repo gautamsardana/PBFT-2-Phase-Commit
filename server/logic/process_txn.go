@@ -81,6 +81,7 @@ func ProcessTxn(ctx context.Context, conf *config.Config, req *common.TxnRequest
 	} else if req.Type == TypeCrossShardSender {
 		err = StartTwoPC(conf, req)
 		if err != nil {
+			_ = RollbackTxn(conf, req)
 			return err
 		}
 	} else {

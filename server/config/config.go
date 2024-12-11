@@ -31,6 +31,7 @@ type Config struct {
 	MapClusterToServers map[int32][]int32
 	DataItemsPerShard   int32
 	IsAlive             bool
+	IsByzantine         bool
 
 	//TxnQueueLock sync.Mutex
 	//TxnQueue     *TxnQueueInfo
