@@ -17,25 +17,11 @@ import (
 func ProcessTxn(ctx context.Context, conf *config.Config, req *common.TxnRequest) error {
 	fmt.Printf("Received ProcessTxn request: %v\n", req)
 
-	dbTxn, err := datastore.GetTransactionByTxnID(conf.DataStore, req.TxnID)
-	if err != nil && err != sql.ErrNoRows {
-		return err
-	}
-	if dbTxn != nil {
-		return errors.New("txn id already exists, invalid txn")
-	}
-
 	req.Type = GetTxnType(conf, req)
-	req.Digest = GetTxnDigest(req)
-	req.SeqNo = conf.PBFT.IncrementSequenceNumber()
-	req.ViewNo = conf.PBFT.GetViewNumber()
+	AcquireLock(conf, req)
+	fmt.Printf("acquired lock for %d and %d\n", req.Sender, req.Receiver)
 
-	req.Status = StatusInit
-	err = datastore.InsertTransaction(conf.DataStore, req)
-	if err != nil {
-		return err
-	}
-
+	var err error
 	defer func() {
 		if err != nil {
 			UpdateTxnFailed(conf, req, err)
@@ -44,10 +30,22 @@ func ProcessTxn(ctx context.Context, conf *config.Config, req *common.TxnRequest
 		}
 	}()
 
-	lockErr := AcquireLock(conf, req)
-	if lockErr != nil {
-		UpdateTxnFailed(conf, req, lockErr)
-		return lockErr
+	dbTxn, err := datastore.GetTransactionByTxnID(conf.DataStore, req.TxnID)
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+	if dbTxn != nil {
+		return errors.New("txn id already exists, invalid txn")
+	}
+
+	req.Digest = GetTxnDigest(req)
+	req.SeqNo = conf.PBFT.IncrementSequenceNumber()
+	req.ViewNo = conf.PBFT.GetViewNumber()
+
+	req.Status = StatusInit
+	err = datastore.InsertTransaction(conf.DataStore, req)
+	if err != nil {
+		return err
 	}
 
 	err = ValidateBalance(conf, req)
@@ -60,24 +58,7 @@ func ProcessTxn(ctx context.Context, conf *config.Config, req *common.TxnRequest
 		return err
 	}
 
-	err = ExecuteTxn(conf, req, false)
-	if err != nil {
-		return err
-	}
-
-	if req.Type == TypeIntraShard {
-		conf.PBFT.IncrementLastExecutedSequenceNumber()
-		ReleaseLock(conf, req)
-		go SendReplyToClient(conf, req)
-	} else if req.Type == TypeCrossShardSender {
-		err = StartTwoPC(conf, req)
-		if err != nil {
-			_ = RollbackTxn(conf, req)
-			return err
-		}
-	} else {
-		// send response back to coordinator cluster
-	}
+	SendExecuteSignal(conf, req)
 
 	return nil
 }
@@ -155,4 +136,17 @@ func StartTwoPC(conf *config.Config, req *common.TxnRequest) error {
 	wg.Wait()
 
 	return nil
+}
+
+func SendExecuteSignal(conf *config.Config, txnReq *common.TxnRequest) {
+	conf.PendingTransactionsMutex.Lock()
+	conf.PendingTransactions[txnReq.SeqNo] = txnReq
+	conf.PendingTransactionsMutex.Unlock()
+
+	select {
+	case conf.ExecuteSignal <- struct{}{}:
+		fmt.Printf("signalled for execution for txn:%s %d\n", txnReq.TxnID, txnReq.SeqNo)
+	default:
+		fmt.Println("worker already signaled or signal channel is full")
+	}
 }

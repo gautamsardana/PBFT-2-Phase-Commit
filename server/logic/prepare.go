@@ -92,8 +92,6 @@ func ReceivePrepare(ctx context.Context, conf *config.Config, req *common.PBFTRe
 	txnReq := &common.TxnRequest{}
 	err := json.Unmarshal(req.TxnRequest, txnReq)
 	if err != nil {
-		UpdateTxnFailed(conf, txnReq, err)
-		ReleaseLock(conf, txnReq)
 		return nil, err
 	}
 

@@ -3,10 +3,11 @@ package config
 import "sync"
 
 type PBFTConfig struct {
-	Lock            sync.Mutex
-	ViewNumber      int32
-	SequenceNumber  int32
-	LastExecutedSeq int32
+	Lock               sync.Mutex
+	ViewNumber         int32
+	SequenceNumber     int32
+	NextSequenceNumber int32
+	LastExecutedSeq    int32
 }
 
 func (c *PBFTConfig) GetSequenceNumber() int32 {
@@ -44,5 +45,15 @@ func (c *PBFTConfig) SetSequenceNumber(updatedSequenceNumber int32) {
 func (c *PBFTConfig) IncrementLastExecutedSequenceNumber() {
 	c.Lock.Lock()
 	c.LastExecutedSeq++
+	c.Lock.Unlock()
+}
+
+func (c *PBFTConfig) GetNextSequenceNumber() int32 {
+	return c.NextSequenceNumber
+}
+
+func (c *PBFTConfig) IncrementNextSequenceNumber() {
+	c.Lock.Lock()
+	c.NextSequenceNumber++
 	c.Lock.Unlock()
 }

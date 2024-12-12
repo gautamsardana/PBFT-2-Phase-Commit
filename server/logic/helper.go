@@ -149,14 +149,13 @@ func AcquireLockWithAbort(conf *config.Config, req *common.TxnRequest) error {
 	return nil
 }
 
-func AcquireLock(conf *config.Config, req *common.TxnRequest) error {
+func AcquireLock(conf *config.Config, req *common.TxnRequest) {
 	if req.Type == TypeIntraShard || req.Type == TypeCrossShardSender {
 		conf.UserLocks[req.Sender%conf.DataItemsPerShard].Lock()
 	}
 	if req.Type == TypeIntraShard || req.Type == TypeCrossShardReceiver {
 		conf.UserLocks[req.Receiver%conf.DataItemsPerShard].Lock()
 	}
-	return nil
 }
 
 func ReleaseLock(conf *config.Config, req *common.TxnRequest) {

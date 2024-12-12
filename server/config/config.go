@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	common "GolandProjects/2pcbyz-gautamsardana/api_common"
 	KeyPool "GolandProjects/2pcbyz-gautamsardana/key_pool"
 	serverPool "GolandProjects/2pcbyz-gautamsardana/server_pool"
 )
@@ -34,8 +35,9 @@ type Config struct {
 	IsAlive             bool
 	IsByzantine         bool
 
-	//TxnQueueLock sync.Mutex
-	//TxnQueue     *TxnQueueInfo
+	PendingTransactions      map[int32]*common.TxnRequest
+	PendingTransactionsMutex sync.Mutex
+	ExecuteSignal            chan struct{}
 
 	PublicKeys *KeyPool.KeyPool
 	PrivateKey *rsa.PrivateKey
@@ -51,7 +53,9 @@ func InitiateConfig(conf *Config) {
 	InitiatePublicKeys(conf)
 	InitiatePrivateKey(conf)
 	conf.MapClusterToServers = make(map[int32][]int32)
-	conf.PBFT = &PBFTConfig{ViewNumber: 1}
+	conf.PBFT = &PBFTConfig{ViewNumber: 1, NextSequenceNumber: 1}
+	conf.PendingTransactions = make(map[int32]*common.TxnRequest)
+	conf.ExecuteSignal = make(chan struct{}, 10)
 }
 
 func InitiateServerPool(conf *Config) {

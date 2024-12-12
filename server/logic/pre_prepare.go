@@ -115,11 +115,7 @@ func ReceivePrePrepare(ctx context.Context, conf *config.Config, req *common.PBF
 		return nil, err
 	}
 
-	lockErr := AcquireLock(conf, txnReq)
-	if lockErr != nil {
-		UpdateTxnFailed(conf, txnReq, lockErr)
-		return nil, lockErr
-	}
+	AcquireLock(conf, txnReq)
 
 	defer func() {
 		if err != nil {

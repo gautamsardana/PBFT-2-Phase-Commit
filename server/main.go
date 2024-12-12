@@ -9,6 +9,7 @@ import (
 	common "GolandProjects/2pcbyz-gautamsardana/api_common"
 	"GolandProjects/2pcbyz-gautamsardana/server/api"
 	"GolandProjects/2pcbyz-gautamsardana/server/config"
+	"GolandProjects/2pcbyz-gautamsardana/server/logic"
 )
 
 func main() {
@@ -16,6 +17,8 @@ func main() {
 
 	config.SetupDB(conf)
 	config.InitiateConfig(conf)
+
+	go logic.WorkerProcess(conf)
 
 	ListenAndServe(conf)
 }

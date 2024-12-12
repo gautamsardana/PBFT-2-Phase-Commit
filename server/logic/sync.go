@@ -80,7 +80,7 @@ func AddNewTxns(ctx context.Context, conf *config.Config, req *common.PBFTReques
 	}
 
 	for _, txn := range newTxns {
-		_ = AcquireLock(conf, txn)
+		AcquireLock(conf, txn)
 		err = ExecuteTxn(conf, txn, true)
 		if err != nil {
 			ReleaseLock(conf, txn)
