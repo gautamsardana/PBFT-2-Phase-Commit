@@ -60,12 +60,13 @@ func ProcessTxn(ctx context.Context, conf *config.Config, req *common.TxnRequest
 		return err
 	}
 
-	err = ExecuteTxn(conf, req)
+	err = ExecuteTxn(conf, req, false)
 	if err != nil {
 		return err
 	}
 
 	if req.Type == TypeIntraShard {
+		conf.PBFT.IncrementLastExecutedSequenceNumber()
 		ReleaseLock(conf, req)
 		go SendReplyToClient(conf, req)
 	} else if req.Type == TypeCrossShardSender {

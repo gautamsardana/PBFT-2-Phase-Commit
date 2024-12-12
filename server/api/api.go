@@ -70,6 +70,15 @@ func (s *Server) Commit(ctx context.Context, req *common.PBFTRequestResponse) (*
 	return nil, nil
 }
 
+func (s *Server) Sync(ctx context.Context, req *common.PBFTRequestResponse) (*common.PBFTRequestResponse, error) {
+	resp, err := logic.ReceiveSyncRequest(ctx, s.Config, req)
+	if err != nil {
+		fmt.Printf("SyncError: %v\n", err)
+		return nil, err
+	}
+	return resp, nil
+}
+
 func (s *Server) TwoPCPrepareRequest(ctx context.Context, req *common.PBFTRequestResponse) (*emptypb.Empty, error) {
 	err := logic.ReceiveTwoPCPrepare(ctx, s.Config, req)
 	if err != nil {

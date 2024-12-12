@@ -113,13 +113,14 @@ func ReceiveCommit(ctx context.Context, conf *config.Config, req *common.PBFTReq
 		return err
 	}
 
-	err = ExecuteTxn(conf, txnReq)
+	err = ExecuteTxn(conf, txnReq, false)
 	if err != nil {
 		return nil
 	}
 	ReleaseLock(conf, txnReq)
 
 	if txnReq.Type == TypeIntraShard {
+		conf.PBFT.IncrementLastExecutedSequenceNumber()
 		go SendReplyToClient(conf, txnReq)
 	}
 

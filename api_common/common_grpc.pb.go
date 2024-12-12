@@ -27,6 +27,7 @@ const (
 	Byz2PC_PrePrepare_FullMethodName           = "/common.Byz2PC/PrePrepare"
 	Byz2PC_Prepare_FullMethodName              = "/common.Byz2PC/Prepare"
 	Byz2PC_Commit_FullMethodName               = "/common.Byz2PC/Commit"
+	Byz2PC_Sync_FullMethodName                 = "/common.Byz2PC/Sync"
 	Byz2PC_TwoPCPrepareRequest_FullMethodName  = "/common.Byz2PC/TwoPCPrepareRequest"
 	Byz2PC_TwoPCPrepareResponse_FullMethodName = "/common.Byz2PC/TwoPCPrepareResponse"
 	Byz2PC_TwoPCCommit_FullMethodName          = "/common.Byz2PC/TwoPCCommit"
@@ -48,6 +49,7 @@ type Byz2PCClient interface {
 	PrePrepare(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*PBFTRequestResponse, error)
 	Prepare(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*PBFTRequestResponse, error)
 	Commit(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Sync(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*PBFTRequestResponse, error)
 	TwoPCPrepareRequest(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	TwoPCPrepareResponse(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	TwoPCCommit(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -130,6 +132,16 @@ func (c *byz2PCClient) Commit(ctx context.Context, in *PBFTRequestResponse, opts
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, Byz2PC_Commit_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *byz2PCClient) Sync(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*PBFTRequestResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PBFTRequestResponse)
+	err := c.cc.Invoke(ctx, Byz2PC_Sync_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -227,6 +239,7 @@ type Byz2PCServer interface {
 	PrePrepare(context.Context, *PBFTRequestResponse) (*PBFTRequestResponse, error)
 	Prepare(context.Context, *PBFTRequestResponse) (*PBFTRequestResponse, error)
 	Commit(context.Context, *PBFTRequestResponse) (*emptypb.Empty, error)
+	Sync(context.Context, *PBFTRequestResponse) (*PBFTRequestResponse, error)
 	TwoPCPrepareRequest(context.Context, *PBFTRequestResponse) (*emptypb.Empty, error)
 	TwoPCPrepareResponse(context.Context, *PBFTRequestResponse) (*emptypb.Empty, error)
 	TwoPCCommit(context.Context, *PBFTRequestResponse) (*emptypb.Empty, error)
@@ -265,6 +278,9 @@ func (UnimplementedByz2PCServer) Prepare(context.Context, *PBFTRequestResponse) 
 }
 func (UnimplementedByz2PCServer) Commit(context.Context, *PBFTRequestResponse) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Commit not implemented")
+}
+func (UnimplementedByz2PCServer) Sync(context.Context, *PBFTRequestResponse) (*PBFTRequestResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Sync not implemented")
 }
 func (UnimplementedByz2PCServer) TwoPCPrepareRequest(context.Context, *PBFTRequestResponse) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TwoPCPrepareRequest not implemented")
@@ -433,6 +449,24 @@ func _Byz2PC_Commit_Handler(srv interface{}, ctx context.Context, dec func(inter
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(Byz2PCServer).Commit(ctx, req.(*PBFTRequestResponse))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Byz2PC_Sync_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PBFTRequestResponse)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(Byz2PCServer).Sync(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Byz2PC_Sync_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(Byz2PCServer).Sync(ctx, req.(*PBFTRequestResponse))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -615,6 +649,10 @@ var Byz2PC_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Commit",
 			Handler:    _Byz2PC_Commit_Handler,
+		},
+		{
+			MethodName: "Sync",
+			Handler:    _Byz2PC_Sync_Handler,
 		},
 		{
 			MethodName: "TwoPCPrepareRequest",

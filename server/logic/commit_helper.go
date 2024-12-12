@@ -72,7 +72,7 @@ func AddCommitMessages(conf *config.Config, req *common.PBFTRequestResponse) err
 	return nil
 }
 
-func ExecuteTxn(conf *config.Config, txnReq *common.TxnRequest) error {
+func ExecuteTxn(conf *config.Config, txnReq *common.TxnRequest, isSync bool) error {
 	fmt.Printf("executing txn for request: %v\n", txnReq)
 
 	if txnReq.Type == TypeIntraShard || txnReq.Type == TypeCrossShardSender {
@@ -108,7 +108,11 @@ func ExecuteTxn(conf *config.Config, txnReq *common.TxnRequest) error {
 	if txnReq.Type == TypeIntraShard {
 		dbTxn.Status = StatusExecuted
 	} else {
-		dbTxn.Status = StatusPreparedToExecute
+		if isSync {
+			dbTxn.Status = StatusExecuted
+		} else {
+			dbTxn.Status = StatusPreparedToExecute
+		}
 	}
 
 	err = datastore.UpdateTransactionStatus(conf.DataStore, dbTxn)

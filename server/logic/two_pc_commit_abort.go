@@ -31,6 +31,7 @@ func Commit(ctx context.Context, conf *config.Config, req *common.PBFTRequestRes
 	if err != nil {
 		fmt.Printf("failed to update transaction status: %v\n", err)
 	}
+	conf.PBFT.IncrementLastExecutedSequenceNumber()
 	ReleaseLock(conf, txnReq)
 
 	return nil
@@ -38,7 +39,7 @@ func Commit(ctx context.Context, conf *config.Config, req *common.PBFTRequestRes
 
 func Abort(ctx context.Context, conf *config.Config, req *common.PBFTRequestResponse) error {
 	//todo: run consensus
-	
+
 	txnReq := &common.TxnRequest{}
 	err := json.Unmarshal(req.TxnRequest, txnReq)
 	if err != nil {

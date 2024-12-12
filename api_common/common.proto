@@ -18,6 +18,7 @@ service Byz2PC {
   rpc PrePrepare(common.PBFTRequestResponse) returns (common.PBFTRequestResponse);
   rpc Prepare(common.PBFTRequestResponse) returns (common.PBFTRequestResponse);
   rpc Commit(common.PBFTRequestResponse) returns (google.protobuf.Empty);
+  rpc Sync(common.PBFTRequestResponse) returns (PBFTRequestResponse);
 
   rpc TwoPCPrepareRequest(common.PBFTRequestResponse) returns (google.protobuf.Empty);
   rpc TwoPCPrepareResponse(common.PBFTRequestResponse) returns (google.protobuf.Empty);
@@ -73,6 +74,7 @@ message SignedMessage  {
   int32 ViewNumber = 1;
   int32 SequenceNumber = 2 ;
   string Digest = 3;
+  int32 LastExecutedSequence = 4;
 }
 
 message PBFTRequestResponse{

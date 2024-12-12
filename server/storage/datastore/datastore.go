@@ -80,12 +80,12 @@ func UpdateTransactionStatus(db *sql.DB, transaction *common.TxnRequest) error {
 	return nil
 }
 
-func GetTransactionsAfterSequence(db *sql.DB, term int32) ([]*common.TxnRequest, error) {
+func GetExecutedTransactionsAfterSequence(db *sql.DB, sequenceNumber int32) ([]*common.TxnRequest, error) {
 	var transactions []*common.TxnRequest
 	var createdAt time.Time
 
-	query := `SELECT txn_id, sender, receiver, amount, seq_no, view_no, type, status, digest, error, created_at FROM transaction WHERE seq_no > ? AND status = 'Committed' ORDER BY seq_no`
-	rows, err := db.Query(query, term)
+	query := `SELECT txn_id, sender, receiver, amount, seq_no, view_no, type, status, digest, error, created_at FROM transaction WHERE seq_no > ? AND status = 'Executed' ORDER BY seq_no`
+	rows, err := db.Query(query, sequenceNumber)
 	if err != nil {
 		return nil, err
 	}

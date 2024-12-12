@@ -16,9 +16,10 @@ func SendPrePrepare(conf *config.Config, req *common.TxnRequest) error {
 	fmt.Printf("Sending pre-prepare with request: %v\n", req)
 
 	signedReq := &common.SignedMessage{
-		ViewNumber:     req.ViewNo,
-		SequenceNumber: req.SeqNo,
-		Digest:         req.Digest,
+		ViewNumber:           req.ViewNo,
+		SequenceNumber:       req.SeqNo,
+		Digest:               req.Digest,
+		LastExecutedSequence: conf.PBFT.GetLastExecutedSequenceNumber(),
 	}
 	signedReqBytes, err := json.Marshal(signedReq)
 	if err != nil {
@@ -106,6 +107,11 @@ func ReceivePrePrepare(ctx context.Context, conf *config.Config, req *common.PBF
 	err = VerifyPBFTMessage(ctx, conf, req, txnReq, MessageTypePrePrepare)
 	if err != nil {
 		UpdateTxnFailed(conf, txnReq, err)
+		return nil, err
+	}
+
+	err = SyncIfServerSlow(ctx, conf, req)
+	if err != nil {
 		return nil, err
 	}
 

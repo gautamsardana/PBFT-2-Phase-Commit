@@ -46,3 +46,14 @@ client times out -> sends request to everyone -> everyone forwards request to le
 3. "Feel free to add a queueing mechanism or delay transactions instead of ignoring them immediately. "
 
 participant cluster -> all nodes get
+
+
+What if the receiver cluster in cross shard txn has only 2 servers active, will it lead to abort?
+same case for intrashard, what is the expected outcome in this case?
+
+- It leads to a timeout in the coordinator cluster and hence, abort. The coordinator cluster has a timer for
+each cross-shard transaction (the time that it waits for the participant cluster to send back its vote).
+Once the timer expires, the leader of the coordinator cluster runs consensus to abort the transaction.
+- For intra-shard transactions: I'd suggest increasing the timer duration to avoid triggering view-changes.
+
+You can remove the view-change part. But you still need a timer on each server for cross-shard transactions. The client also has its own timer.
