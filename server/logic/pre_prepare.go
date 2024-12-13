@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -83,9 +84,6 @@ func SendPrePrepare(conf *config.Config, req *common.TxnRequest) error {
 }
 
 func ReceivePrePrepare(ctx context.Context, conf *config.Config, req *common.PBFTRequestResponse) (*common.PBFTRequestResponse, error) {
-	//todo: check if txn already exists? any scenario where i
-	// already have in my db but i get another prepare?
-
 	if !conf.IsAlive {
 		return nil, errors.New("server dead")
 	}
@@ -98,11 +96,30 @@ func ReceivePrePrepare(ctx context.Context, conf *config.Config, req *common.PBF
 
 	fmt.Printf("Received PrePrepare for request: %v\n", txnReq)
 
-	txnReq.Status = StatusPrepared
-	err = datastore.InsertTransaction(conf.DataStore, txnReq)
-	if err != nil {
+	dbTxn, err := datastore.GetTransactionByTxnID(conf.DataStore, txnReq.TxnID)
+	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
+
+	if dbTxn == nil {
+		txnReq.Status = StatusPrepared
+		err = datastore.InsertTransaction(conf.DataStore, txnReq)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		txnReq.Status = StatusPrepared
+		err = datastore.UpdateTransactionStatus(conf.DataStore, txnReq)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	defer func() {
+		if err != nil {
+			UpdateTxnFailed(conf, txnReq, err)
+		}
+	}()
 
 	err = VerifyPBFTMessage(ctx, conf, req, txnReq, MessageTypePrePrepare)
 	if err != nil {
@@ -116,13 +133,6 @@ func ReceivePrePrepare(ctx context.Context, conf *config.Config, req *common.PBF
 	}
 
 	AcquireLock(conf, txnReq)
-
-	defer func() {
-		if err != nil {
-			UpdateTxnFailed(conf, txnReq, err)
-			ReleaseLock(conf, txnReq)
-		}
-	}()
 
 	err = ValidateBalance(conf, txnReq)
 	if err != nil {

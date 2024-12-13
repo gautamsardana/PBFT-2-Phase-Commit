@@ -98,7 +98,6 @@ func ReceivePrepare(ctx context.Context, conf *config.Config, req *common.PBFTRe
 	defer func() {
 		if err != nil {
 			UpdateTxnFailed(conf, txnReq, err)
-			ReleaseLock(conf, txnReq)
 		}
 	}()
 

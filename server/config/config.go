@@ -55,7 +55,7 @@ func InitiateConfig(conf *Config) {
 	conf.MapClusterToServers = make(map[int32][]int32)
 	conf.PBFT = &PBFTConfig{ViewNumber: 1, NextSequenceNumber: 1}
 	conf.PendingTransactions = make(map[int32]*common.TxnRequest)
-	conf.ExecuteSignal = make(chan struct{}, 10)
+	conf.ExecuteSignal = make(chan struct{}, 1000)
 }
 
 func InitiateServerPool(conf *Config) {

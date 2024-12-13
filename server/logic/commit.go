@@ -91,14 +91,12 @@ func ReceiveCommit(ctx context.Context, conf *config.Config, req *common.PBFTReq
 	err := json.Unmarshal(req.TxnRequest, txnReq)
 	if err != nil {
 		UpdateTxnFailed(conf, txnReq, err)
-		ReleaseLock(conf, txnReq)
 		return err
 	}
 
 	defer func() {
 		if err != nil {
 			UpdateTxnFailed(conf, txnReq, err)
-			ReleaseLock(conf, txnReq)
 		}
 	}()
 

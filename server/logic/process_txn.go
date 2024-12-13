@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math"
 	"sync"
@@ -21,31 +20,34 @@ func ProcessTxn(ctx context.Context, conf *config.Config, req *common.TxnRequest
 	AcquireLock(conf, req)
 	fmt.Printf("acquired lock for %d and %d\n", req.Sender, req.Receiver)
 
-	var err error
-	defer func() {
-		if err != nil {
-			UpdateTxnFailed(conf, req, err)
-			ReleaseLock(conf, req)
-			SendReplyToClient(conf, req)
-		}
-	}()
-
 	dbTxn, err := datastore.GetTransactionByTxnID(conf.DataStore, req.TxnID)
 	if err != nil && err != sql.ErrNoRows {
 		return err
 	}
-	if dbTxn != nil {
-		return errors.New("txn id already exists, invalid txn")
-	}
 
-	req.Digest = GetTxnDigest(req)
-	req.SeqNo = conf.PBFT.IncrementSequenceNumber()
-	req.ViewNo = conf.PBFT.GetViewNumber()
+	defer func() {
+		if err != nil {
+			UpdateTxnFailed(conf, req, err)
+		}
+	}()
 
-	req.Status = StatusInit
-	err = datastore.InsertTransaction(conf.DataStore, req)
-	if err != nil {
-		return err
+	if dbTxn == nil {
+		req.Digest = GetTxnDigest(req)
+		req.SeqNo = conf.PBFT.IncrementSequenceNumber()
+		req.ViewNo = conf.PBFT.GetViewNumber()
+
+		req.Status = StatusInit
+		err = datastore.InsertTransaction(conf.DataStore, req)
+		if err != nil {
+			return err
+		}
+	} else {
+		req = dbTxn
+		req.Status = StatusInit
+		err = datastore.UpdateTransactionStatus(conf.DataStore, req)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = ValidateBalance(conf, req)
