@@ -15,7 +15,14 @@ import (
 func SendCommit(conf *config.Config, req *common.TxnRequest, outcome string) error {
 	fmt.Printf("Sending commit for request: %v\n", req)
 
-	commitMessages, err := datastore.GetPBFTMessages(conf.DataStore, req.TxnID, MessageTypeCommit)
+	messageType := EmptyString
+	if outcome == EmptyString {
+		messageType = MessageTypeCommit
+	} else {
+		messageType = MessageTypeTwoPCCommit
+	}
+
+	commitMessages, err := datastore.GetPBFTMessages(conf.DataStore, req.TxnID, messageType)
 	if err != nil {
 		return err
 	}

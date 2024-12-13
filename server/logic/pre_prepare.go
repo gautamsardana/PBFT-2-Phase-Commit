@@ -76,8 +76,11 @@ func SendPrePrepare(conf *config.Config, req *common.TxnRequest, outcome string)
 				fmt.Println(err)
 			}
 
-			HandlePBFTResponse(conf, resp, MessageTypePrepare)
-
+			if resp.Outcome == EmptyString {
+				HandlePBFTResponse(conf, resp, MessageTypePrepare)
+			} else {
+				HandlePBFTResponse(conf, resp, MessageTypeTwoPCPrepare)
+			}
 		}(config.MapServerNumberToAddress[serverNo])
 	}
 	wg.Wait()

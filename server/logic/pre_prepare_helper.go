@@ -1,11 +1,12 @@
 package logic
 
 import (
-	common "GolandProjects/2pcbyz-gautamsardana/api_common"
-	"GolandProjects/2pcbyz-gautamsardana/server/config"
 	"context"
 	"encoding/json"
 	"errors"
+
+	common "GolandProjects/2pcbyz-gautamsardana/api_common"
+	"GolandProjects/2pcbyz-gautamsardana/server/config"
 )
 
 func VerifyPBFTMessage(ctx context.Context, conf *config.Config, req *common.PBFTRequestResponse, txnReq *common.TxnRequest, messageType string) error {
@@ -59,6 +60,7 @@ func SendPrePrepareResponse(conf *config.Config, req *common.PBFTRequestResponse
 		Sign:          sign,
 		ServerNo:      conf.ServerNumber,
 		TxnRequest:    req.TxnRequest,
+		Outcome:       req.Outcome,
 	}
 	return prepareReq, nil
 }

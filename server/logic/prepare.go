@@ -15,7 +15,13 @@ import (
 func SendPrepare(conf *config.Config, req *common.TxnRequest, outcome string) error {
 	fmt.Printf("Sending prepare for request: %v\n", req)
 
-	prepareMessages, err := datastore.GetPBFTMessages(conf.DataStore, req.TxnID, MessageTypePrepare)
+	messageType := EmptyString
+	if outcome == EmptyString {
+		messageType = MessageTypePrepare
+	} else {
+		messageType = MessageTypeTwoPCPrepare
+	}
+	prepareMessages, err := datastore.GetPBFTMessages(conf.DataStore, req.TxnID, messageType)
 	if err != nil {
 		return err
 	}
@@ -81,8 +87,11 @@ func SendPrepare(conf *config.Config, req *common.TxnRequest, outcome string) er
 				fmt.Println(err)
 			}
 
-			HandlePBFTResponse(conf, resp, MessageTypeCommit)
-
+			if resp.Outcome == EmptyString {
+				HandlePBFTResponse(conf, resp, MessageTypeCommit)
+			} else {
+				HandlePBFTResponse(conf, resp, MessageTypeTwoPCCommit)
+			}
 		}(config.MapServerNumberToAddress[serverNo])
 	}
 	wg.Wait()

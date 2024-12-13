@@ -35,6 +35,7 @@ func SendPrepareResponse(conf *config.Config, req *common.PBFTRequestResponse, t
 		Sign:          sign,
 		ServerNo:      conf.ServerNumber,
 		TxnRequest:    req.TxnRequest,
+		Outcome:       req.Outcome,
 	}
 
 	return commitReq, nil
