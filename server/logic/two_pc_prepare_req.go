@@ -3,6 +3,7 @@ package logic
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"sync"
@@ -13,13 +14,23 @@ import (
 )
 
 func ReceiveTwoPCPrepare(ctx context.Context, conf *config.Config, req *common.PBFTRequestResponse) error {
-	//todo: verify these messages
-	txnReq := &common.TxnRequest{}
-	err := json.Unmarshal(req.TxnRequest, txnReq)
+	serverAddr := config.MapServerNumberToAddress[req.ServerNo]
+	publicKey, err := conf.PublicKeys.GetPublicKey(serverAddr)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("received request from coordinator cluster with request: %v\n", txnReq)
+
+	err = VerifySignature(publicKey, req.SignedMessage, req.Sign)
+	if err != nil {
+		return err
+	}
+
+	txnReq := &common.TxnRequest{}
+	err = json.Unmarshal(req.TxnRequest, txnReq)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("received TwoPCPrepare from coordinator cluster with request: %v\n", txnReq)
 
 	err = AddTwoPCMessages(conf, req, MessageTypeTwoPCPrepareFromCoordinator)
 	if err != nil {
@@ -101,6 +112,10 @@ func AddTwoPCMessages(conf *config.Config, req *common.PBFTRequestResponse, mess
 	err := json.Unmarshal(req.SignedMessage, cert)
 	if err != nil {
 		return err
+	}
+
+	if len(cert.Messages) < int(conf.Majority-1) {
+		return errors.New("not enough messages")
 	}
 
 	for _, twoPCCommitRequest := range cert.Messages {

@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
+	"sync"
 
 	common "GolandProjects/2pcbyz-gautamsardana/api_common"
 	"GolandProjects/2pcbyz-gautamsardana/server/config"
@@ -23,17 +25,60 @@ func ReceiveTwoPCResponse(ctx context.Context, conf *config.Config, req *common.
 		return err
 	}
 
-	//todo: another consensus
-	if txnReq.Status == StatusPreparedToExecute {
-		//send commit
-		//commit
-		//respond to client
-		//release lock
-	} else if txnReq.Status == StatusFailed {
-		// send abort - participant changes from failed to aborted & releases lock
-		// abort and rollback
-		//respond to client
-		// release lock
+	if GetLeaderNumber(conf, conf.ClusterNumber) != conf.ServerNumber {
+		return nil
 	}
+
+	err = StartConsensus(conf, txnReq, OutcomeCommit)
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		err = TwoPCCommit(ctx, conf, txnReq)
+		if err != nil {
+			fmt.Printf("TwoPCCommit failed: %v\n", err)
+		}
+		SendReplyToClient(conf, txnReq)
+	}()
+
+	reqBytes, err := json.Marshal(txnReq)
+	if err != nil {
+		return err
+	}
+
+	sign, err := SignMessage(conf.PrivateKey, reqBytes)
+	if err != nil {
+		return err
+	}
+
+	twoPCCommitReq := &common.PBFTRequestResponse{
+		SignedMessage: reqBytes,
+		Sign:          sign,
+		Outcome:       OutcomeCommit,
+		ServerNo:      conf.ServerNumber,
+	}
+
+	receiverCluster := math.Ceil(float64(txnReq.Receiver) / float64(conf.DataItemsPerShard))
+	var wg sync.WaitGroup
+	for _, serverNo := range conf.MapClusterToServers[int32(receiverCluster)] {
+		if serverNo == conf.ServerNumber {
+			continue
+		}
+		wg.Add(1)
+		go func(serverAddress string) {
+			defer wg.Done()
+			server, err := conf.Pool.GetServer(serverAddress)
+			if err != nil {
+				fmt.Println(err)
+			}
+			_, err = server.TwoPCCommitRequest(context.Background(), twoPCCommitReq)
+			if err != nil {
+				fmt.Println(err)
+			}
+
+		}(config.MapServerNumberToAddress[serverNo])
+	}
+	wg.Wait()
 	return nil
 }

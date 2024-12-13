@@ -22,8 +22,9 @@ service Byz2PC {
 
   rpc TwoPCPrepareRequest(common.PBFTRequestResponse) returns (google.protobuf.Empty);
   rpc TwoPCPrepareResponse(common.PBFTRequestResponse) returns (google.protobuf.Empty);
-  rpc TwoPCCommit(common.PBFTRequestResponse) returns (google.protobuf.Empty);
-  rpc TwoPCAbort(common.PBFTRequestResponse) returns (google.protobuf.Empty);
+  rpc TwoPCCommitRequest(common.PBFTRequestResponse) returns (google.protobuf.Empty);
+  rpc TwoPCCommit(common.TxnRequest) returns (google.protobuf.Empty);
+  rpc TwoPCAbort(common.TxnRequest) returns (google.protobuf.Empty);
 
   rpc Performance(google.protobuf.Empty) returns (PerformanceResponse);
   rpc PrintBalance(PrintBalanceRequest) returns (PrintBalanceResponse);
@@ -82,6 +83,7 @@ message PBFTRequestResponse{
   bytes Sign = 2;
   bytes TxnRequest = 3;
   int32 ServerNo = 4;
+  string Outcome = 5;
 }
 
 message PBFTMessage{

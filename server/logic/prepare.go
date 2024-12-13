@@ -12,7 +12,7 @@ import (
 	"GolandProjects/2pcbyz-gautamsardana/server/storage/datastore"
 )
 
-func SendPrepare(conf *config.Config, req *common.TxnRequest) error {
+func SendPrepare(conf *config.Config, req *common.TxnRequest, outcome string) error {
 	fmt.Printf("Sending prepare for request: %v\n", req)
 
 	prepareMessages, err := datastore.GetPBFTMessages(conf.DataStore, req.TxnID, MessageTypePrepare)
@@ -28,7 +28,8 @@ func SendPrepare(conf *config.Config, req *common.TxnRequest) error {
 		return err
 	}
 
-	dbTxn.Status = StatusPrepared
+	GetTxnUpdatedStatusLeader(dbTxn, MessageTypePrepare)
+	req.Status = dbTxn.Status
 	err = datastore.UpdateTransactionStatus(conf.DataStore, dbTxn)
 	if err != nil {
 		return err
@@ -60,6 +61,7 @@ func SendPrepare(conf *config.Config, req *common.TxnRequest) error {
 		Sign:          sign,
 		TxnRequest:    txnBytes,
 		ServerNo:      conf.ServerNumber,
+		Outcome:       outcome,
 	}
 
 	var wg sync.WaitGroup
@@ -116,7 +118,8 @@ func ReceivePrepare(ctx context.Context, conf *config.Config, req *common.PBFTRe
 	if err != nil {
 		return nil, err
 	}
-	dbTxn.Status = StatusCommitted
+	GetTxnUpdatedStatusFollower(dbTxn, MessageTypePrepare)
+	txnReq.Status = dbTxn.Status
 	err = datastore.UpdateTransactionStatus(conf.DataStore, dbTxn)
 	if err != nil {
 		return nil, err

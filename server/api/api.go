@@ -64,7 +64,7 @@ func (s *Server) Prepare(ctx context.Context, req *common.PBFTRequestResponse) (
 func (s *Server) Commit(ctx context.Context, req *common.PBFTRequestResponse) (*emptypb.Empty, error) {
 	err := logic.ReceiveCommit(ctx, s.Config, req)
 	if err != nil {
-		fmt.Printf("PrepareError: %v\n", err)
+		fmt.Printf("CommitError: %v\n", err)
 		return nil, err
 	}
 	return nil, nil
@@ -97,8 +97,17 @@ func (s *Server) TwoPCPrepareResponse(ctx context.Context, req *common.PBFTReque
 	return nil, nil
 }
 
-func (s *Server) TwoPCCommit(ctx context.Context, req *common.PBFTRequestResponse) (*emptypb.Empty, error) {
-	err := logic.Commit(ctx, s.Config, req)
+func (s *Server) TwoPCCommitRequest(ctx context.Context, req *common.PBFTRequestResponse) (*emptypb.Empty, error) {
+	err := logic.ReceiveTwoPCCommit(ctx, s.Config, req)
+	if err != nil {
+		fmt.Printf("TwoPCCommitRequestError: %v\n", err)
+		return nil, err
+	}
+	return nil, nil
+}
+
+func (s *Server) TwoPCCommit(ctx context.Context, req *common.TxnRequest) (*emptypb.Empty, error) {
+	err := logic.TwoPCCommit(ctx, s.Config, req)
 	if err != nil {
 		fmt.Printf("TwoPCCommitError: %v\n", err)
 		return nil, err
@@ -106,8 +115,8 @@ func (s *Server) TwoPCCommit(ctx context.Context, req *common.PBFTRequestRespons
 	return nil, nil
 }
 
-func (s *Server) TwoPCAbort(ctx context.Context, req *common.PBFTRequestResponse) (*emptypb.Empty, error) {
-	err := logic.Abort(ctx, s.Config, req)
+func (s *Server) TwoPCAbort(ctx context.Context, req *common.TxnRequest) (*emptypb.Empty, error) {
+	err := logic.TwoPCAbort(ctx, s.Config, req)
 	if err != nil {
 		fmt.Printf("TwoPCAbortError: %v\n", err)
 		return nil, err

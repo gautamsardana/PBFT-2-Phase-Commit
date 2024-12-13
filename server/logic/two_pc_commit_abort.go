@@ -2,7 +2,6 @@ package logic
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	common "GolandProjects/2pcbyz-gautamsardana/api_common"
@@ -10,18 +9,10 @@ import (
 	"GolandProjects/2pcbyz-gautamsardana/server/storage/datastore"
 )
 
-func Commit(ctx context.Context, conf *config.Config, req *common.PBFTRequestResponse) error {
-	//todo: run consensus
+func TwoPCCommit(ctx context.Context, conf *config.Config, req *common.TxnRequest) error {
+	fmt.Printf("received final commit from leader for txn: %v\n", req)
 
-	txnReq := &common.TxnRequest{}
-	err := json.Unmarshal(req.TxnRequest, txnReq)
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("Received commit from coordinator cluster for txn: %v\n", txnReq)
-
-	dbTxn, err := datastore.GetTransactionByTxnID(conf.DataStore, txnReq.TxnID)
+	dbTxn, err := datastore.GetTransactionByTxnID(conf.DataStore, req.TxnID)
 	if err != nil {
 		return err
 	}
@@ -32,59 +23,49 @@ func Commit(ctx context.Context, conf *config.Config, req *common.PBFTRequestRes
 		fmt.Printf("failed to update transaction status: %v\n", err)
 	}
 	conf.PBFT.IncrementLastExecutedSequenceNumber()
-	ReleaseLock(conf, txnReq)
+	ReleaseLock(conf, req)
 
 	return nil
 }
 
-func Abort(ctx context.Context, conf *config.Config, req *common.PBFTRequestResponse) error {
-	//todo: run consensus
+func TwoPCAbort(ctx context.Context, conf *config.Config, req *common.TxnRequest) error {
+	fmt.Printf("received final abort from leader for txn: %v\n", req)
 
-	txnReq := &common.TxnRequest{}
-	err := json.Unmarshal(req.TxnRequest, txnReq)
+	dbTxn, err := datastore.GetTransactionByTxnID(conf.DataStore, req.TxnID)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("Received abort from coordinator cluster for txn: %v\n", txnReq)
-
-	dbTxn, err := datastore.GetTransactionByTxnID(conf.DataStore, txnReq.TxnID)
-	if err != nil {
-		return err
-	}
-
-	dbTxnStatus := dbTxn.Status
+	//dbTxnStatus := dbTxn.Status
 	err = RollbackTxn(conf, dbTxn)
 	if err != nil {
 		return err
 	}
-	if dbTxnStatus == StatusPreparedToExecute {
-		ReleaseLock(conf, dbTxn)
-	}
+	//if dbTxnStatus == StatusPreparedToExecute {
+	//	ReleaseLock(conf, dbTxn)
+	//}
 
 	return nil
 }
 
 func RollbackTxn(conf *config.Config, req *common.TxnRequest) error {
-	if req.Status == StatusPreparedToExecute {
-		if req.Type == TypeCrossShardSender {
-			senderBalance, err := datastore.GetBalance(conf.DataStore, req.Sender)
-			if err != nil {
-				return err
-			}
-			err = datastore.UpdateBalance(conf.DataStore, datastore.User{User: req.Sender, Balance: senderBalance + req.Amount})
-			if err != nil {
-				return err
-			}
-		} else if req.Type == TypeCrossShardReceiver {
-			receiverBalance, err := datastore.GetBalance(conf.DataStore, req.Receiver)
-			if err != nil {
-				return err
-			}
-			err = datastore.UpdateBalance(conf.DataStore, datastore.User{User: req.Receiver, Balance: receiverBalance - req.Amount})
-			if err != nil {
-				return err
-			}
+	if req.Type == TypeCrossShardSender {
+		senderBalance, err := datastore.GetBalance(conf.DataStore, req.Sender)
+		if err != nil {
+			return err
+		}
+		err = datastore.UpdateBalance(conf.DataStore, datastore.User{User: req.Sender, Balance: senderBalance + req.Amount})
+		if err != nil {
+			return err
+		}
+	} else if req.Type == TypeCrossShardReceiver {
+		receiverBalance, err := datastore.GetBalance(conf.DataStore, req.Receiver)
+		if err != nil {
+			return err
+		}
+		err = datastore.UpdateBalance(conf.DataStore, datastore.User{User: req.Receiver, Balance: receiverBalance - req.Amount})
+		if err != nil {
+			return err
 		}
 	}
 

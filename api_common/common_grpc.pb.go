@@ -30,6 +30,7 @@ const (
 	Byz2PC_Sync_FullMethodName                 = "/common.Byz2PC/Sync"
 	Byz2PC_TwoPCPrepareRequest_FullMethodName  = "/common.Byz2PC/TwoPCPrepareRequest"
 	Byz2PC_TwoPCPrepareResponse_FullMethodName = "/common.Byz2PC/TwoPCPrepareResponse"
+	Byz2PC_TwoPCCommitRequest_FullMethodName   = "/common.Byz2PC/TwoPCCommitRequest"
 	Byz2PC_TwoPCCommit_FullMethodName          = "/common.Byz2PC/TwoPCCommit"
 	Byz2PC_TwoPCAbort_FullMethodName           = "/common.Byz2PC/TwoPCAbort"
 	Byz2PC_Performance_FullMethodName          = "/common.Byz2PC/Performance"
@@ -52,8 +53,9 @@ type Byz2PCClient interface {
 	Sync(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*PBFTRequestResponse, error)
 	TwoPCPrepareRequest(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	TwoPCPrepareResponse(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	TwoPCCommit(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	TwoPCAbort(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	TwoPCCommitRequest(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	TwoPCCommit(ctx context.Context, in *TxnRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	TwoPCAbort(ctx context.Context, in *TxnRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Performance(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PerformanceResponse, error)
 	PrintBalance(ctx context.Context, in *PrintBalanceRequest, opts ...grpc.CallOption) (*PrintBalanceResponse, error)
 	PrintDB(ctx context.Context, in *PrintDBRequest, opts ...grpc.CallOption) (*PrintDBResponse, error)
@@ -168,7 +170,17 @@ func (c *byz2PCClient) TwoPCPrepareResponse(ctx context.Context, in *PBFTRequest
 	return out, nil
 }
 
-func (c *byz2PCClient) TwoPCCommit(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *byz2PCClient) TwoPCCommitRequest(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, Byz2PC_TwoPCCommitRequest_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *byz2PCClient) TwoPCCommit(ctx context.Context, in *TxnRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, Byz2PC_TwoPCCommit_FullMethodName, in, out, cOpts...)
@@ -178,7 +190,7 @@ func (c *byz2PCClient) TwoPCCommit(ctx context.Context, in *PBFTRequestResponse,
 	return out, nil
 }
 
-func (c *byz2PCClient) TwoPCAbort(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *byz2PCClient) TwoPCAbort(ctx context.Context, in *TxnRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, Byz2PC_TwoPCAbort_FullMethodName, in, out, cOpts...)
@@ -242,8 +254,9 @@ type Byz2PCServer interface {
 	Sync(context.Context, *PBFTRequestResponse) (*PBFTRequestResponse, error)
 	TwoPCPrepareRequest(context.Context, *PBFTRequestResponse) (*emptypb.Empty, error)
 	TwoPCPrepareResponse(context.Context, *PBFTRequestResponse) (*emptypb.Empty, error)
-	TwoPCCommit(context.Context, *PBFTRequestResponse) (*emptypb.Empty, error)
-	TwoPCAbort(context.Context, *PBFTRequestResponse) (*emptypb.Empty, error)
+	TwoPCCommitRequest(context.Context, *PBFTRequestResponse) (*emptypb.Empty, error)
+	TwoPCCommit(context.Context, *TxnRequest) (*emptypb.Empty, error)
+	TwoPCAbort(context.Context, *TxnRequest) (*emptypb.Empty, error)
 	Performance(context.Context, *emptypb.Empty) (*PerformanceResponse, error)
 	PrintBalance(context.Context, *PrintBalanceRequest) (*PrintBalanceResponse, error)
 	PrintDB(context.Context, *PrintDBRequest) (*PrintDBResponse, error)
@@ -288,10 +301,13 @@ func (UnimplementedByz2PCServer) TwoPCPrepareRequest(context.Context, *PBFTReque
 func (UnimplementedByz2PCServer) TwoPCPrepareResponse(context.Context, *PBFTRequestResponse) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TwoPCPrepareResponse not implemented")
 }
-func (UnimplementedByz2PCServer) TwoPCCommit(context.Context, *PBFTRequestResponse) (*emptypb.Empty, error) {
+func (UnimplementedByz2PCServer) TwoPCCommitRequest(context.Context, *PBFTRequestResponse) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TwoPCCommitRequest not implemented")
+}
+func (UnimplementedByz2PCServer) TwoPCCommit(context.Context, *TxnRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TwoPCCommit not implemented")
 }
-func (UnimplementedByz2PCServer) TwoPCAbort(context.Context, *PBFTRequestResponse) (*emptypb.Empty, error) {
+func (UnimplementedByz2PCServer) TwoPCAbort(context.Context, *TxnRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TwoPCAbort not implemented")
 }
 func (UnimplementedByz2PCServer) Performance(context.Context, *emptypb.Empty) (*PerformanceResponse, error) {
@@ -507,8 +523,26 @@ func _Byz2PC_TwoPCPrepareResponse_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Byz2PC_TwoPCCommit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Byz2PC_TwoPCCommitRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PBFTRequestResponse)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(Byz2PCServer).TwoPCCommitRequest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Byz2PC_TwoPCCommitRequest_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(Byz2PCServer).TwoPCCommitRequest(ctx, req.(*PBFTRequestResponse))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Byz2PC_TwoPCCommit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TxnRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -520,13 +554,13 @@ func _Byz2PC_TwoPCCommit_Handler(srv interface{}, ctx context.Context, dec func(
 		FullMethod: Byz2PC_TwoPCCommit_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(Byz2PCServer).TwoPCCommit(ctx, req.(*PBFTRequestResponse))
+		return srv.(Byz2PCServer).TwoPCCommit(ctx, req.(*TxnRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _Byz2PC_TwoPCAbort_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PBFTRequestResponse)
+	in := new(TxnRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -538,7 +572,7 @@ func _Byz2PC_TwoPCAbort_Handler(srv interface{}, ctx context.Context, dec func(i
 		FullMethod: Byz2PC_TwoPCAbort_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(Byz2PCServer).TwoPCAbort(ctx, req.(*PBFTRequestResponse))
+		return srv.(Byz2PCServer).TwoPCAbort(ctx, req.(*TxnRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -661,6 +695,10 @@ var Byz2PC_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "TwoPCPrepareResponse",
 			Handler:    _Byz2PC_TwoPCPrepareResponse_Handler,
+		},
+		{
+			MethodName: "TwoPCCommitRequest",
+			Handler:    _Byz2PC_TwoPCCommitRequest_Handler,
 		},
 		{
 			MethodName: "TwoPCCommit",

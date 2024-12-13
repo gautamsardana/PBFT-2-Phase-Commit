@@ -55,7 +55,7 @@ func ProcessTxn(ctx context.Context, conf *config.Config, req *common.TxnRequest
 		return err
 	}
 
-	err = StartConsensus(conf, req)
+	err = StartConsensus(conf, req, "")
 	if err != nil {
 		return err
 	}
@@ -65,18 +65,18 @@ func ProcessTxn(ctx context.Context, conf *config.Config, req *common.TxnRequest
 	return nil
 }
 
-func StartConsensus(conf *config.Config, req *common.TxnRequest) error {
-	err := SendPrePrepare(conf, req)
+func StartConsensus(conf *config.Config, req *common.TxnRequest, outcome string) error {
+	err := SendPrePrepare(conf, req, outcome)
 	if err != nil {
 		return err
 	}
 
-	err = SendPrepare(conf, req)
+	err = SendPrepare(conf, req, outcome)
 	if err != nil {
 		return err
 	}
 
-	err = SendCommit(conf, req)
+	err = SendCommit(conf, req, outcome)
 	if err != nil {
 		return err
 	}

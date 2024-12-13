@@ -41,14 +41,14 @@ func ProcessReadyTransactions(conf *config.Config) {
 			conf.PBFT.IncrementLastExecutedSequenceNumber()
 			ReleaseLock(conf, txnRequest)
 			go SendReplyToClient(conf, txnRequest)
-		} else if txnRequest.Type == TypeCrossShardSender {
+		} else if txnRequest.Type == TypeCrossShardSender &&
+			GetLeaderNumber(conf, conf.ClusterNumber) == conf.ServerNumber {
+			//todo: start timer
 			err = StartTwoPC(conf, txnRequest)
 			if err != nil {
 				_ = RollbackTxn(conf, txnRequest)
 				fmt.Println(err)
 			}
-		} else {
-			// send response back to coordinator cluster
 		}
 	}
 }
@@ -92,7 +92,7 @@ func ExecuteTxn(conf *config.Config, txnReq *common.TxnRequest, isSync bool) err
 		if isSync {
 			dbTxn.Status = StatusExecuted
 		} else {
-			dbTxn.Status = StatusPreparedToExecute
+			dbTxn.Status = Status2PCPending
 		}
 	}
 

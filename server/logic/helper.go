@@ -24,15 +24,22 @@ const (
 	TypeCrossShardSender   = "CrossShard-Sender"
 	TypeCrossShardReceiver = "CrossShard-Receiver"
 
-	StatusInit              = "Init"
-	StatusPrePrepared       = "Pre-Prepared"
-	StatusPrepared          = "Prepared"
-	StatusCommitted         = "Committed"
-	StatusExecuted          = "Executed"
-	StatusPreparedToExecute = "PreparedToExecute"
-	StatusSuccess           = "Success"
-	StatusAborted           = "Aborted"
-	StatusFailed            = "Failed"
+	StatusInit                   = "Init"
+	StatusPrePrepared            = "Pre-Prepared"
+	StatusPrepared               = "Prepared"
+	StatusCommitted              = "Committed"
+	StatusExecuted               = "Executed"
+	Status2PCPending             = "2PC-Pending"
+	Status2PCPrePrepared         = "2PC-Pre-Prepared"
+	Status2PCPrepared            = "2PC-Prepared"
+	Status2PCCommitted           = "2PC-Committed"
+	StatusTwoPCExecuted          = "2PC-Executed"
+	StatusTwoPCPreparedToExecute = "2PC-PreparedToExecute"
+	StatusAborted                = "Aborted"
+	StatusFailed                 = "Failed"
+
+	OutcomeCommit = "Commit"
+	OutcomeAbort  = "Abort"
 )
 
 const (
@@ -208,4 +215,44 @@ func GetLeaderNumber(conf *config.Config, clusterNumber int32) int32 {
 	servers := conf.MapClusterToServers[clusterNumber]
 	leaderIndex := (conf.PBFT.GetViewNumber() - 1) % int32(len(servers))
 	return servers[leaderIndex]
+}
+
+func GetTxnUpdatedStatusLeader(txn *common.TxnRequest, messageType string) {
+	switch messageType {
+	case MessageTypePrePrepare:
+		if txn.Status == Status2PCPending {
+			txn.Status = Status2PCPrePrepared
+		} else {
+			txn.Status = StatusPrePrepared
+		}
+	case MessageTypePrepare:
+		if txn.Status == Status2PCPrePrepared {
+			txn.Status = Status2PCPrepared
+		} else {
+			txn.Status = StatusPrepared
+		}
+	case MessageTypeCommit:
+		if txn.Status == Status2PCPrepared {
+			txn.Status = Status2PCCommitted
+		} else {
+			txn.Status = StatusCommitted
+		}
+	}
+}
+
+func GetTxnUpdatedStatusFollower(txn *common.TxnRequest, messageType string) {
+	switch messageType {
+	case MessageTypePrePrepare:
+		if txn.Status == Status2PCPending {
+			txn.Status = Status2PCPrepared
+		} else {
+			txn.Status = StatusPrepared
+		}
+	case MessageTypePrepare:
+		if txn.Status == Status2PCPrepared {
+			txn.Status = Status2PCCommitted
+		} else {
+			txn.Status = StatusCommitted
+		}
+	}
 }

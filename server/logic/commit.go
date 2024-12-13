@@ -12,7 +12,7 @@ import (
 	"GolandProjects/2pcbyz-gautamsardana/server/storage/datastore"
 )
 
-func SendCommit(conf *config.Config, req *common.TxnRequest) error {
+func SendCommit(conf *config.Config, req *common.TxnRequest, outcome string) error {
 	fmt.Printf("Sending commit for request: %v\n", req)
 
 	commitMessages, err := datastore.GetPBFTMessages(conf.DataStore, req.TxnID, MessageTypeCommit)
@@ -28,7 +28,8 @@ func SendCommit(conf *config.Config, req *common.TxnRequest) error {
 		return err
 	}
 
-	dbTxn.Status = StatusCommitted
+	GetTxnUpdatedStatusLeader(dbTxn, MessageTypeCommit)
+	req.Status = dbTxn.Status
 	err = datastore.UpdateTransactionStatus(conf.DataStore, dbTxn)
 	if err != nil {
 		return err
@@ -60,6 +61,7 @@ func SendCommit(conf *config.Config, req *common.TxnRequest) error {
 		Sign:          sign,
 		TxnRequest:    txnBytes,
 		ServerNo:      conf.ServerNumber,
+		Outcome:       outcome,
 	}
 
 	var wg sync.WaitGroup
@@ -111,7 +113,30 @@ func ReceiveCommit(ctx context.Context, conf *config.Config, req *common.PBFTReq
 		return err
 	}
 
-	SendExecuteSignal(conf, txnReq)
+	dbTxn, err := datastore.GetTransactionByTxnID(conf.DataStore, txnReq.TxnID)
+	if err != nil {
+		return err
+	}
+
+	if dbTxn.Type == TypeIntraShard {
+		SendExecuteSignal(conf, txnReq)
+	} else {
+		if dbTxn.Status == StatusCommitted {
+			SendExecuteSignal(conf, txnReq)
+		} else if dbTxn.Status == Status2PCCommitted {
+			if req.Outcome == OutcomeCommit {
+				err = TwoPCCommit(ctx, conf, txnReq)
+				if err != nil {
+					return err
+				}
+			} else if req.Outcome == OutcomeAbort {
+				err = TwoPCAbort(ctx, conf, txnReq)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
 
 	return nil
 }

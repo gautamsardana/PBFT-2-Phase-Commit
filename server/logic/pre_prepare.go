@@ -13,7 +13,7 @@ import (
 	"GolandProjects/2pcbyz-gautamsardana/server/storage/datastore"
 )
 
-func SendPrePrepare(conf *config.Config, req *common.TxnRequest) error {
+func SendPrePrepare(conf *config.Config, req *common.TxnRequest, outcome string) error {
 	fmt.Printf("Sending pre-prepare with request: %v\n", req)
 
 	signedReq := &common.SignedMessage{
@@ -42,6 +42,7 @@ func SendPrePrepare(conf *config.Config, req *common.TxnRequest) error {
 		Sign:          sign,
 		TxnRequest:    requestBytes,
 		ServerNo:      conf.ServerNumber,
+		Outcome:       outcome,
 	}
 
 	dbTxn, err := datastore.GetTransactionByTxnID(conf.DataStore, req.TxnID)
@@ -49,7 +50,8 @@ func SendPrePrepare(conf *config.Config, req *common.TxnRequest) error {
 		return err
 	}
 
-	dbTxn.Status = StatusPrePrepared
+	GetTxnUpdatedStatusLeader(dbTxn, MessageTypePrePrepare)
+	req.Status = dbTxn.Status
 	err = datastore.UpdateTransactionStatus(conf.DataStore, dbTxn)
 	if err != nil {
 		return err
@@ -94,7 +96,18 @@ func ReceivePrePrepare(ctx context.Context, conf *config.Config, req *common.PBF
 		return nil, err
 	}
 
+	defer func() {
+		if err != nil {
+			UpdateTxnFailed(conf, txnReq, err)
+		}
+	}()
+
 	fmt.Printf("Received PrePrepare for request: %v\n", txnReq)
+
+	err = SyncIfServerSlow(ctx, conf, req)
+	if err != nil {
+		return nil, err
+	}
 
 	dbTxn, err := datastore.GetTransactionByTxnID(conf.DataStore, txnReq.TxnID)
 	if err != nil && err != sql.ErrNoRows {
@@ -107,34 +120,23 @@ func ReceivePrePrepare(ctx context.Context, conf *config.Config, req *common.PBF
 		if err != nil {
 			return nil, err
 		}
+		AcquireLock(conf, txnReq)
+
+		err = ValidateBalance(conf, txnReq)
+		if err != nil {
+			return nil, err
+		}
+
 	} else {
-		txnReq.Status = StatusPrepared
-		err = datastore.UpdateTransactionStatus(conf.DataStore, txnReq)
+		GetTxnUpdatedStatusFollower(dbTxn, MessageTypePrePrepare)
+		txnReq.Status = dbTxn.Status
+		err = datastore.UpdateTransactionStatus(conf.DataStore, dbTxn)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	defer func() {
-		if err != nil {
-			UpdateTxnFailed(conf, txnReq, err)
-		}
-	}()
-
 	err = VerifyPBFTMessage(ctx, conf, req, txnReq, MessageTypePrePrepare)
-	if err != nil {
-		UpdateTxnFailed(conf, txnReq, err)
-		return nil, err
-	}
-
-	err = SyncIfServerSlow(ctx, conf, req)
-	if err != nil {
-		return nil, err
-	}
-
-	AcquireLock(conf, txnReq)
-
-	err = ValidateBalance(conf, txnReq)
 	if err != nil {
 		return nil, err
 	}
