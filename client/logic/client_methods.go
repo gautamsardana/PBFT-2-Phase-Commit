@@ -95,7 +95,7 @@ func Benchmark(_ context.Context, conf *config.Config, req *common.BenchmarkRequ
 		}
 
 		senderCluster := math.Ceil(float64(txn.Sender) / float64(conf.DataItemsPerShard))
-		ProcessTxn(conf, txn, int32(senderCluster))
+		ProcessTxn(conf, txn, int32(senderCluster), req.ContactServers)
 		conf.TxnCount++
 	}
 

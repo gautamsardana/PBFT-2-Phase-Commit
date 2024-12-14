@@ -69,13 +69,12 @@ func SendPrePrepare(conf *config.Config, req *common.TxnRequest, outcome string)
 			defer wg.Done()
 			server, err := conf.Pool.GetServer(serverAddress)
 			if err != nil {
-				fmt.Println(err)
+				return
 			}
 			resp, err := server.PrePrepare(context.Background(), prePrepareReq)
-			if err != nil {
-				fmt.Println(err)
+			if err != nil || resp == nil {
+				return
 			}
-
 			if resp.Outcome == EmptyString {
 				HandlePBFTResponse(conf, resp, MessageTypePrepare)
 			} else {
@@ -92,6 +91,9 @@ func ReceivePrePrepare(ctx context.Context, conf *config.Config, req *common.PBF
 	if !conf.IsAlive {
 		return nil, errors.New("server dead")
 	}
+	if conf.IsByzantine {
+		return nil, errors.New("server byzantine")
+	}
 
 	txnReq := &common.TxnRequest{}
 	err := json.Unmarshal(req.TxnRequest, txnReq)
@@ -107,10 +109,12 @@ func ReceivePrePrepare(ctx context.Context, conf *config.Config, req *common.PBF
 
 	fmt.Printf("Received PrePrepare for request: %v\n", txnReq)
 
-	err = SyncIfServerSlow(ctx, conf, req)
-	if err != nil {
-		return nil, err
-	}
+	/*
+		err = SyncIfServerSlow(ctx, conf, req)
+		if err != nil {
+			return nil, err
+		}
+	*/
 
 	dbTxn, err := datastore.GetTransactionByTxnID(conf.DataStore, txnReq.TxnID)
 	if err != nil && err != sql.ErrNoRows {

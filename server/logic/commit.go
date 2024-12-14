@@ -72,10 +72,8 @@ func SendCommit(conf *config.Config, req *common.TxnRequest, outcome string) err
 	}
 
 	var wg sync.WaitGroup
-	for _, serverNo := range conf.MapClusterToServers[conf.ClusterNumber] {
-		if serverNo == conf.ServerNumber {
-			continue
-		}
+	for _, commitMessage := range commitMessages {
+		serverNo := commitMessage.Sender
 		wg.Add(1)
 		go func(serverAddress string) {
 			defer wg.Done()

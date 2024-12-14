@@ -31,7 +31,7 @@ type Config struct {
 	Pool                *serverPool.ServerPool
 	ClusterNumber       int32
 	MapClusterToServers map[int32][]int32
-	DataItemsPerShard   int32
+	DataItemsPerShard   int32 `json:"data_items_per_shard"`
 	IsAlive             bool
 	IsByzantine         bool
 
@@ -44,8 +44,10 @@ type Config struct {
 
 	PBFT *PBFTConfig
 
-	TwoPCLock sync.Mutex
-	UserLocks []sync.Mutex
+	TwoPCLock  sync.Mutex
+	UserLocks  []sync.Mutex
+	TwoPCTimer map[string]*time.Timer
+	TwoPCChan  map[string]chan struct{}
 }
 
 func InitiateConfig(conf *Config) {
@@ -56,6 +58,9 @@ func InitiateConfig(conf *Config) {
 	conf.PBFT = &PBFTConfig{ViewNumber: 1, NextSequenceNumber: 1}
 	conf.PendingTransactions = make(map[int32]*common.TxnRequest)
 	conf.ExecuteSignal = make(chan struct{}, 1000)
+	conf.TwoPCTimer = make(map[string]*time.Timer)
+	conf.TwoPCChan = make(map[string]chan struct{})
+	conf.UserLocks = make([]sync.Mutex, conf.DataItemsPerShard)
 }
 
 func InitiateServerPool(conf *Config) {

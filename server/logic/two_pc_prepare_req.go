@@ -1,19 +1,18 @@
 package logic
 
 import (
+	common "GolandProjects/2pcbyz-gautamsardana/api_common"
+	"GolandProjects/2pcbyz-gautamsardana/server/config"
+	"GolandProjects/2pcbyz-gautamsardana/server/storage/datastore"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
 	"sync"
-
-	common "GolandProjects/2pcbyz-gautamsardana/api_common"
-	"GolandProjects/2pcbyz-gautamsardana/server/config"
-	"GolandProjects/2pcbyz-gautamsardana/server/storage/datastore"
 )
 
-func ReceiveTwoPCPrepare(ctx context.Context, conf *config.Config, req *common.PBFTRequestResponse) error {
+func ReceiveTwoPCPrepareRequest(ctx context.Context, conf *config.Config, req *common.PBFTRequestResponse) error {
 	serverAddr := config.MapServerNumberToAddress[req.ServerNo]
 	publicKey, err := conf.PublicKeys.GetPublicKey(serverAddr)
 	if err != nil {

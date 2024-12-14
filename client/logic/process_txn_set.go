@@ -62,17 +62,17 @@ func ProcessTxnSet(ctx context.Context, req *common.TxnSet, conf *config.Config)
 
 		conf.TxnCount++
 
-		ProcessTxn(conf, txn, int32(senderCluster))
+		ProcessTxn(conf, txn, int32(senderCluster), req.ContactServers)
 	}
 	return nil
 }
 
-func ProcessTxn(conf *config.Config, txn *common.TxnRequest, cluster int32) {
+func ProcessTxn(conf *config.Config, txn *common.TxnRequest, cluster int32, contactServers []string) {
 	conf.TxnQueueLock.Lock()
 	conf.TxnStartTime[txn.TxnID] = time.Now()
 	conf.TxnQueueLock.Unlock()
 
-	server, err := conf.Pool.GetServer(mapServerNoToServerAddr[GetLeader(conf, cluster)])
+	server, err := conf.Pool.GetServer(GetContactServerForCluster(conf, cluster, contactServers))
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -83,10 +83,15 @@ func ProcessTxn(conf *config.Config, txn *common.TxnRequest, cluster int32) {
 	}
 }
 
-func GetLeader(conf *config.Config, clusterNumber int32) int32 {
-	servers := conf.MapClusterToServers[clusterNumber]
-	leaderIndex := (conf.ViewNumber - 1) % int32(len(servers))
-	return servers[leaderIndex]
+func GetContactServerForCluster(conf *config.Config, cluster int32, contactServers []string) string {
+	for _, serverNo := range conf.MapClusterToServers[cluster] {
+		for _, contactServer := range contactServers {
+			if mapServerToServerNo[contactServer] == serverNo {
+				return mapServerNoToServerAddr[serverNo]
+			}
+		}
+	}
+	return ""
 }
 
 func GetServerStateMap() map[int32]bool {

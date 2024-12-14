@@ -49,7 +49,7 @@ func VerifyCommit(ctx context.Context, conf *config.Config, req *common.PBFTRequ
 		validPrepareCount++
 	}
 
-	if validPrepareCount < conf.Majority {
+	if validPrepareCount < conf.Majority-1 {
 		return errors.New("not enough valid prepares")
 	}
 

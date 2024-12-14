@@ -13,7 +13,7 @@ import (
 	common "GolandProjects/2pcbyz-gautamsardana/api_common"
 )
 
-const inputFilePath = "Lab4_New_tests.csv"
+const inputFilePath = "Lab4_Testset_1.csv"
 
 var sets map[int32]*common.TxnSet
 var totalSets int32
@@ -31,7 +31,8 @@ func loadCSV(filename string) error {
 	sets = make(map[int32]*common.TxnSet)
 
 	var currentSetNo int32
-	var currentLiveServers []string
+	var liveServers []string
+	var contactServers []string
 	var byzantineServers []string
 
 	for {
@@ -45,12 +46,17 @@ func loadCSV(filename string) error {
 			currentSetNo = int32(setNumber)
 			totalSets = currentSetNo
 
-			currentLiveServers = strings.Split(strings.Trim(setRow[2], "[] "), ",")
-			for i := range currentLiveServers {
-				currentLiveServers[i] = strings.TrimSpace(currentLiveServers[i])
+			liveServers = strings.Split(strings.Trim(setRow[2], "[] "), ",")
+			for i := range liveServers {
+				liveServers[i] = strings.TrimSpace(liveServers[i])
 			}
 
-			byzantineServers = strings.Split(strings.Trim(setRow[3], "[] "), ",")
+			contactServers = strings.Split(strings.Trim(setRow[3], "[] "), ",")
+			for i := range contactServers {
+				contactServers[i] = strings.TrimSpace(contactServers[i])
+			}
+
+			byzantineServers = strings.Split(strings.Trim(setRow[4], "[] "), ",")
 			for i := range byzantineServers {
 				byzantineServers[i] = strings.TrimSpace(byzantineServers[i])
 			}
@@ -59,7 +65,8 @@ func loadCSV(filename string) error {
 				sets[currentSetNo] = &common.TxnSet{
 					SetNo:            currentSetNo,
 					Txns:             []*common.TxnRequest{},
-					LiveServers:      currentLiveServers,
+					LiveServers:      liveServers,
+					ContactServers:   contactServers,
 					ByzantineServers: byzantineServers,
 				}
 			}
@@ -107,7 +114,7 @@ func main() {
 
 	var i int32
 	for i = 1; i <= totalSets; i++ {
-		fmt.Printf("Processing Set %d: Txns: %v LiveServers: %v ContactServers: %v\n", i, sets[i].Txns, sets[i].LiveServers, sets[i].ByzantineServers)
+		fmt.Printf("Processing Set %d: Txns: %v LiveServers: %v ContactServers: %v ByzantineServers: %v \n", i, sets[i].Txns, sets[i].LiveServers, sets[i].ContactServers, sets[i].ByzantineServers)
 
 		scanner.Scan()
 		ProcessSet(sets[i], client)
@@ -144,7 +151,7 @@ func main() {
 				scanner.Scan()
 				txnNumberString := scanner.Text()
 				txnNumber, _ := strconv.Atoi(txnNumberString)
-				Benchmark(client, txnNumber)
+				Benchmark(client, txnNumber, sets[i].ContactServers)
 			} else {
 				fmt.Println("Unknown command")
 			}

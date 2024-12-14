@@ -22,7 +22,7 @@ func SyncIfServerSlow(ctx context.Context, conf *config.Config, req *common.PBFT
 		return nil
 	}
 
-	fmt.Printf("server is slow, asking for new txns...")
+	fmt.Printf("server is slow, asking for new txns...\n")
 
 	signedReq := &common.SignedMessage{
 		LastExecutedSequence: conf.PBFT.GetLastExecutedSequenceNumber(),
@@ -61,8 +61,6 @@ func SyncIfServerSlow(ctx context.Context, conf *config.Config, req *common.PBFT
 }
 
 func AddNewTxns(ctx context.Context, conf *config.Config, req *common.PBFTRequestResponse) error {
-	fmt.Printf("i was slow, adding these new txns: %v\n", req)
-
 	serverAddr := config.MapServerNumberToAddress[req.ServerNo]
 	publicKey, err := conf.PublicKeys.GetPublicKey(serverAddr)
 	if err != nil {
@@ -78,6 +76,8 @@ func AddNewTxns(ctx context.Context, conf *config.Config, req *common.PBFTReques
 	if err != nil {
 		return err
 	}
+
+	fmt.Printf("i was slow, adding these new txns: %v\n", newTxns)
 
 	for _, txn := range newTxns {
 		AcquireLock(conf, txn)

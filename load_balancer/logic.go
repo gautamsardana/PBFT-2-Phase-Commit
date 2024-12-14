@@ -42,8 +42,8 @@ func Performance(client common.Byz2PCClient) {
 	fmt.Printf("Throughput: %.2f transactions/sec\n", resp.Throughput)
 }
 
-func Benchmark(client common.Byz2PCClient, txnNumber int) {
-	resp, err := client.Benchmark(context.Background(), &common.BenchmarkRequest{TxnNumber: int32(txnNumber)})
+func Benchmark(client common.Byz2PCClient, txnNumber int, contactServers []string) {
+	resp, err := client.Benchmark(context.Background(), &common.BenchmarkRequest{TxnNumber: int32(txnNumber), ContactServers: contactServers})
 	if err != nil {
 		fmt.Println("Error:", err)
 	}

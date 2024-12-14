@@ -78,7 +78,7 @@ func VerifyPrepare(ctx context.Context, conf *config.Config, req *common.PBFTReq
 		validPrePrepareCount++
 	}
 
-	if validPrePrepareCount < conf.Majority {
+	if validPrePrepareCount < conf.Majority-1 {
 		return errors.New("not enough valid pre-prepares")
 	}
 

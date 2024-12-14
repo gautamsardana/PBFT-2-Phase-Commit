@@ -94,7 +94,7 @@ func GetExecutedTransactionsAfterSequence(db *sql.DB, sequenceNumber int32) ([]*
 	for rows.Next() {
 		var txn common.TxnRequest
 		if err = rows.Scan(&txn.TxnID, &txn.Sender, &txn.Receiver, &txn.Amount, &txn.SeqNo, &txn.ViewNo,
-			&txn.Type, &txn.Status, &txn.Digest, &txn.Error, createdAt); err != nil {
+			&txn.Type, &txn.Status, &txn.Digest, &txn.Error, &createdAt); err != nil {
 			return nil, err
 		}
 		txn.CreatedAt = timestamppb.New(createdAt)

@@ -27,6 +27,8 @@ func SendPrepare(conf *config.Config, req *common.TxnRequest, outcome string) er
 	}
 	if len(prepareMessages) < int(conf.Majority)-1 {
 		return errors.New("not enough prepare messages")
+	} else if conf.IsByzantine {
+		return errors.New("server byzantine")
 	}
 
 	dbTxn, err := datastore.GetTransactionByTxnID(conf.DataStore, req.TxnID)
@@ -71,22 +73,19 @@ func SendPrepare(conf *config.Config, req *common.TxnRequest, outcome string) er
 	}
 
 	var wg sync.WaitGroup
-	for _, serverNo := range conf.MapClusterToServers[conf.ClusterNumber] {
-		if serverNo == conf.ServerNumber {
-			continue
-		}
+	for _, prepareMessage := range prepareMessages {
+		serverNo := prepareMessage.Sender
 		wg.Add(1)
 		go func(serverAddress string) {
 			defer wg.Done()
 			server, err := conf.Pool.GetServer(serverAddress)
 			if err != nil {
-				fmt.Println(err)
+				return
 			}
 			resp, err := server.Prepare(context.Background(), prepareReq)
-			if err != nil {
-				fmt.Println(err)
+			if err != nil || resp == nil {
+				return
 			}
-
 			if resp.Outcome == EmptyString {
 				HandlePBFTResponse(conf, resp, MessageTypeCommit)
 			} else {

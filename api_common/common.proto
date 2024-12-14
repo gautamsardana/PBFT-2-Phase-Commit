@@ -48,7 +48,8 @@ message TxnSet {
   int32 SetNo = 1;
   repeated TxnRequest Txns = 2;
   repeated string LiveServers = 3;
-  repeated string ByzantineServers = 4;
+  repeated string ContactServers = 4;
+  repeated string ByzantineServers = 5;
 }
 
 message TxnRequest {
@@ -126,4 +127,5 @@ message PrintDBResponse{
 
 message BenchmarkRequest{
   int32 TxnNumber = 1;
+  repeated string ContactServers = 2;
 }

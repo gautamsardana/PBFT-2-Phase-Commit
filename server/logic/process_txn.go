@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 	"sync"
+	"time"
 
 	common "GolandProjects/2pcbyz-gautamsardana/api_common"
 	"GolandProjects/2pcbyz-gautamsardana/server/config"
@@ -17,8 +18,15 @@ func ProcessTxn(ctx context.Context, conf *config.Config, req *common.TxnRequest
 	fmt.Printf("Received ProcessTxn request: %v\n", req)
 
 	req.Type = GetTxnType(conf, req)
+
 	AcquireLock(conf, req)
 	fmt.Printf("acquired lock for %d and %d\n", req.Sender, req.Receiver)
+
+	err := ValidateBalance(conf, req)
+	if err != nil {
+		ReleaseLock(conf, req)
+		return err
+	}
 
 	dbTxn, err := datastore.GetTransactionByTxnID(conf.DataStore, req.TxnID)
 	if err != nil && err != sql.ErrNoRows {
@@ -48,11 +56,6 @@ func ProcessTxn(ctx context.Context, conf *config.Config, req *common.TxnRequest
 		if err != nil {
 			return err
 		}
-	}
-
-	err = ValidateBalance(conf, req)
-	if err != nil {
-		return err
 	}
 
 	err = StartConsensus(conf, req, "")
@@ -117,6 +120,12 @@ func StartTwoPC(conf *config.Config, req *common.TxnRequest) error {
 		ServerNo:      conf.ServerNumber,
 	}
 
+	conf.TwoPCLock.Lock()
+	conf.TwoPCTimer[req.TxnID] = time.NewTimer(5 * time.Second)
+	conf.TwoPCChan[req.TxnID] = make(chan struct{})
+	conf.TwoPCLock.Unlock()
+	go WaitForParticipantResponse(conf, req)
+
 	receiverCluster := math.Ceil(float64(req.Receiver) / float64(conf.DataItemsPerShard))
 
 	var wg sync.WaitGroup
@@ -132,7 +141,6 @@ func StartTwoPC(conf *config.Config, req *common.TxnRequest) error {
 			if err != nil {
 				fmt.Println(err)
 			}
-
 		}(config.MapServerNumberToAddress[serverNo])
 	}
 	wg.Wait()

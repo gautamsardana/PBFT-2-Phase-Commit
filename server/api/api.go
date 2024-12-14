@@ -1,15 +1,13 @@
 package api
 
 import (
+	common "GolandProjects/2pcbyz-gautamsardana/api_common"
+	"GolandProjects/2pcbyz-gautamsardana/server/config"
+	"GolandProjects/2pcbyz-gautamsardana/server/logic"
 	"context"
 	"fmt"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"log"
-	"sync"
-
-	common "GolandProjects/2pcbyz-gautamsardana/api_common"
-	"GolandProjects/2pcbyz-gautamsardana/server/config"
-	"GolandProjects/2pcbyz-gautamsardana/server/logic"
 )
 
 type Server struct {
@@ -23,8 +21,6 @@ func (s *Server) UpdateServerState(ctx context.Context, req *common.UpdateServer
 	s.Config.IsByzantine = req.IsByzantine
 	s.Config.ClusterNumber = req.ClusterNumber
 	s.Config.DataItemsPerShard = req.DataItemsPerShard
-
-	s.Config.UserLocks = make([]sync.Mutex, s.Config.DataItemsPerShard)
 
 	for key, cluster := range req.Clusters {
 		s.Config.MapClusterToServers[key] = cluster.Values
@@ -80,7 +76,7 @@ func (s *Server) Sync(ctx context.Context, req *common.PBFTRequestResponse) (*co
 }
 
 func (s *Server) TwoPCPrepareRequest(ctx context.Context, req *common.PBFTRequestResponse) (*emptypb.Empty, error) {
-	err := logic.ReceiveTwoPCPrepare(ctx, s.Config, req)
+	err := logic.ReceiveTwoPCPrepareRequest(ctx, s.Config, req)
 	if err != nil {
 		fmt.Printf("TwoPCPrepareRequestError: %v\n", err)
 		return nil, err
@@ -89,7 +85,7 @@ func (s *Server) TwoPCPrepareRequest(ctx context.Context, req *common.PBFTReques
 }
 
 func (s *Server) TwoPCPrepareResponse(ctx context.Context, req *common.PBFTRequestResponse) (*emptypb.Empty, error) {
-	err := logic.ReceiveTwoPCResponse(ctx, s.Config, req)
+	err := logic.ReceiveTwoPCPrepareResponse(ctx, s.Config, req)
 	if err != nil {
 		fmt.Printf("ReceiveTwoPCResponseError: %v\n", err)
 		return nil, err

@@ -16,5 +16,6 @@
     "localhost:8090",
     "localhost:8091",
     "localhost:8092"
-  ]
+  ],
+  "data_items_per_shard": 1000
 }
