@@ -44,8 +44,11 @@ func ReceiveTwoPCPrepareRequest(ctx context.Context, conf *config.Config, req *c
 	if err != nil {
 		return err
 	}
+	return nil
+}
 
-	commitMessages, err := datastore.GetPBFTMessages(conf.DataStore, txnReq.TxnID, MessageTypeCommit)
+func SendTwoPCPrepareResponse(conf *config.Config, req *common.TxnRequest) error {
+	commitMessages, err := datastore.GetPBFTMessages(conf.DataStore, req.TxnID, MessageTypeCommit)
 	if err != nil {
 		return err
 	}
@@ -64,7 +67,7 @@ func ReceiveTwoPCPrepareRequest(ctx context.Context, conf *config.Config, req *c
 		return err
 	}
 
-	dbTxn, err := datastore.GetTransactionByTxnID(conf.DataStore, txnReq.TxnID)
+	dbTxn, err := datastore.GetTransactionByTxnID(conf.DataStore, req.TxnID)
 	if err != nil {
 		return err
 	}
@@ -83,7 +86,7 @@ func ReceiveTwoPCPrepareRequest(ctx context.Context, conf *config.Config, req *c
 
 	fmt.Printf("sending response to coordinator cluster for txn: %s\n", dbTxn.TxnID)
 
-	senderCluster := math.Ceil(float64(txnReq.Sender) / float64(conf.DataItemsPerShard))
+	senderCluster := math.Ceil(float64(req.Sender) / float64(conf.DataItemsPerShard))
 
 	var wg sync.WaitGroup
 	for _, serverNo := range conf.MapClusterToServers[int32(senderCluster)] {

@@ -36,14 +36,22 @@ func TwoPCAbort(ctx context.Context, conf *config.Config, req *common.TxnRequest
 		return err
 	}
 
-	//dbTxnStatus := dbTxn.Status
+	if dbTxn.Status == StatusCommitted {
+		dbTxn.Status = StatusAborted
+		err := datastore.UpdateTransactionStatus(conf.DataStore, dbTxn)
+		if err != nil {
+			fmt.Printf("failed to update transaction status: %v\n", err)
+		}
+		ReleaseLock(conf, dbTxn)
+		return nil
+	}
+
 	err = RollbackTxn(conf, dbTxn)
 	if err != nil {
 		return err
 	}
-	//if dbTxnStatus == StatusPreparedToExecute {
-	//	ReleaseLock(conf, dbTxn)
-	//}
+
+	ReleaseLock(conf, dbTxn)
 
 	return nil
 }

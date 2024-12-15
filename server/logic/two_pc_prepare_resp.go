@@ -38,12 +38,12 @@ func ReceiveTwoPCPrepareResponse(ctx context.Context, conf *config.Config, req *
 func WaitForParticipantResponse(conf *config.Config, req *common.TxnRequest) {
 	select {
 	case <-conf.TwoPCTimer[req.TxnID].C:
-		fmt.Printf("outcome = abort\n\n")
+		fmt.Printf("outcome = abort\n")
 		ProcessTwoPCPrepareResponse(context.Background(), conf, req, OutcomeAbort)
 		return
 	case <-conf.TwoPCChan[req.TxnID]:
 		conf.TwoPCTimer[req.TxnID].Stop()
-		fmt.Printf("outcome = commit\n\n")
+		fmt.Printf("outcome = commit\n")
 		ProcessTwoPCPrepareResponse(context.Background(), conf, req, OutcomeCommit)
 		return
 	}
@@ -83,7 +83,7 @@ func ProcessTwoPCPrepareResponse(ctx context.Context, conf *config.Config, txnRe
 	twoPCCommitReq := &common.PBFTRequestResponse{
 		SignedMessage: reqBytes,
 		Sign:          sign,
-		Outcome:       OutcomeCommit,
+		Outcome:       outcome,
 		ServerNo:      conf.ServerNumber,
 	}
 

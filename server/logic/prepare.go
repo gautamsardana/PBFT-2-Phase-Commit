@@ -84,6 +84,7 @@ func SendPrepare(conf *config.Config, req *common.TxnRequest, outcome string) er
 			}
 			resp, err := server.Prepare(context.Background(), prepareReq)
 			if err != nil || resp == nil {
+				fmt.Printf("Prepare failed for request %v: %v\n", prepareReq, err)
 				return
 			}
 			if resp.Outcome == EmptyString {

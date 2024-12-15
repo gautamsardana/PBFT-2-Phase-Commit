@@ -164,20 +164,24 @@ func AcquireLockWithAbort(conf *config.Config, req *common.TxnRequest) error {
 func AcquireLock(conf *config.Config, req *common.TxnRequest) {
 	if req.Type == TypeIntraShard || req.Type == TypeCrossShardSender {
 		conf.UserLocks[req.Sender%conf.DataItemsPerShard].Lock()
+		fmt.Printf("acquired lock for sender %d\n", req.Sender)
 	}
-	fmt.Printf("acquired lock for sender %d\n", req.Sender)
+
 	if req.Type == TypeIntraShard || req.Type == TypeCrossShardReceiver {
 		conf.UserLocks[req.Receiver%conf.DataItemsPerShard].Lock()
+		fmt.Printf("acquired lock for receiver %d\n", req.Receiver)
 	}
-	fmt.Printf("acquired lock for receiver %d\n", req.Receiver)
 }
 
 func ReleaseLock(conf *config.Config, req *common.TxnRequest) {
 	if req.Type == TypeIntraShard || req.Type == TypeCrossShardSender {
 		conf.UserLocks[req.Sender%conf.DataItemsPerShard].Unlock()
+		fmt.Printf("released lock for sender %d\n", req.Sender)
 	}
+
 	if req.Type == TypeIntraShard || req.Type == TypeCrossShardReceiver {
 		conf.UserLocks[req.Receiver%conf.DataItemsPerShard].Unlock()
+		fmt.Printf("released lock for receiver %d\n", req.Receiver)
 	}
 }
 

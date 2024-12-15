@@ -45,10 +45,15 @@ func ProcessReadyTransactions(conf *config.Config) {
 			go SendReplyToClient(conf, txnRequest)
 		} else if txnRequest.Type == TypeCrossShardSender &&
 			GetLeaderNumber(conf, conf.ClusterNumber) == conf.ServerNumber {
-			//todo: start timer
 			err = StartTwoPC(conf, txnRequest)
 			if err != nil {
 				_ = RollbackTxn(conf, txnRequest)
+				fmt.Println(err)
+			}
+		} else if txnRequest.Type == TypeCrossShardReceiver &&
+			GetLeaderNumber(conf, conf.ClusterNumber) == conf.ServerNumber {
+			err = SendTwoPCPrepareResponse(conf, txnRequest)
+			if err != nil {
 				fmt.Println(err)
 			}
 		}
@@ -129,6 +134,9 @@ func RetryPendingTransactions(conf *config.Config) {
 	}
 
 	for _, txn := range pendingTxns {
+		if txn.Type == TypeCrossShardReceiver {
+			continue
+		}
 		messagesDeleted, err := datastore.DeletePBFTMessagesByByTxnID(conf.DataStore, txn.TxnID) // not a good way of doing this, ideally have a retry count
 		if err != nil {
 			fmt.Println(err)

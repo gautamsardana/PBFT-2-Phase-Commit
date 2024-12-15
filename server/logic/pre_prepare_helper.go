@@ -41,7 +41,7 @@ func VerifyPBFTMessage(ctx context.Context, conf *config.Config, req *common.PBF
 	if messageType == MessageTypePrePrepare && signedMessage.SequenceNumber > conf.PBFT.GetSequenceNumber() {
 		conf.PBFT.SetSequenceNumber(signedMessage.SequenceNumber)
 	} else {
-		if signedMessage.SequenceNumber != txnReq.SeqNo {
+		if txnReq.Type == TypeIntraShard && signedMessage.SequenceNumber != txnReq.SeqNo {
 			return errors.New("invalid sequence number")
 		}
 	}
