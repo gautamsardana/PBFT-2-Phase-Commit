@@ -4,7 +4,9 @@ import (
 	common "GolandProjects/2pcbyz-gautamsardana/api_common"
 	"GolandProjects/2pcbyz-gautamsardana/server/config"
 	"GolandProjects/2pcbyz-gautamsardana/server/storage/datastore"
+	"context"
 	"fmt"
+	"time"
 )
 
 func WorkerProcess(conf *config.Config) {
@@ -102,4 +104,41 @@ func ExecuteTxn(conf *config.Config, txnReq *common.TxnRequest, isSync bool) err
 	}
 
 	return nil
+}
+
+func RetryCron(conf *config.Config) {
+	ticker := time.NewTicker(7 * time.Second)
+
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				if GetLeaderNumber(conf, conf.ClusterNumber) != conf.ServerNumber {
+					return
+				}
+				RetryPendingTransactions(conf)
+			}
+		}
+	}()
+}
+
+func RetryPendingTransactions(conf *config.Config) {
+	pendingTxns, err := datastore.GetPendingTransactions(conf.DataStore)
+	if err != nil {
+		return
+	}
+
+	for _, txn := range pendingTxns {
+		messagesDeleted, err := datastore.DeletePBFTMessagesByByTxnID(conf.DataStore, txn.TxnID) // not a good way of doing this, ideally have a retry count
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Printf("retrying pending transaction %v\n", txn)
+		fmt.Printf("messages deleted: %d\n", messagesDeleted)
+
+		err = ProcessTxn(context.Background(), conf, txn, true)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
 }

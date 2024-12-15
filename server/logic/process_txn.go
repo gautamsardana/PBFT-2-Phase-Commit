@@ -14,13 +14,14 @@ import (
 	"GolandProjects/2pcbyz-gautamsardana/server/storage/datastore"
 )
 
-func ProcessTxn(ctx context.Context, conf *config.Config, req *common.TxnRequest) error {
+func ProcessTxn(ctx context.Context, conf *config.Config, req *common.TxnRequest, isRetry bool) error {
 	fmt.Printf("Received ProcessTxn request: %v\n", req)
 
 	req.Type = GetTxnType(conf, req)
 
-	AcquireLock(conf, req)
-	fmt.Printf("acquired lock for %d and %d\n", req.Sender, req.Receiver)
+	if !isRetry {
+		AcquireLock(conf, req)
+	}
 
 	err := ValidateBalance(conf, req)
 	if err != nil {
@@ -32,12 +33,6 @@ func ProcessTxn(ctx context.Context, conf *config.Config, req *common.TxnRequest
 	if err != nil && err != sql.ErrNoRows {
 		return err
 	}
-
-	defer func() {
-		if err != nil {
-			UpdateTxnFailed(conf, req, err)
-		}
-	}()
 
 	if dbTxn == nil {
 		req.Digest = GetTxnDigest(req)

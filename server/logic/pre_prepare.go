@@ -133,7 +133,6 @@ func ReceivePrePrepare(ctx context.Context, conf *config.Config, req *common.PBF
 		if err != nil {
 			return nil, err
 		}
-
 	} else {
 		GetTxnUpdatedStatusFollower(dbTxn, MessageTypePrePrepare)
 		txnReq.Status = dbTxn.Status

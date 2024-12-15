@@ -29,6 +29,7 @@ type Config struct {
 	DataStore           *sql.DB
 	ServerAddresses     []string `json:"server_addresses"`
 	Pool                *serverPool.ServerPool
+	ClusterSize         int32 `json:"cluster_size"`
 	ClusterNumber       int32
 	MapClusterToServers map[int32][]int32
 	DataItemsPerShard   int32 `json:"data_items_per_shard"`
@@ -54,7 +55,8 @@ func InitiateConfig(conf *Config) {
 	InitiateServerPool(conf)
 	InitiatePublicKeys(conf)
 	InitiatePrivateKey(conf)
-	conf.MapClusterToServers = make(map[int32][]int32)
+	conf.ClusterNumber = (conf.ServerNumber-1)/conf.ClusterSize + 1
+	conf.MapClusterToServers = map[int32][]int32{1: {1, 2, 3, 4}, 2: {5, 6, 7, 8}, 3: {9, 10, 11, 12}}
 	conf.PBFT = &PBFTConfig{ViewNumber: 1, NextSequenceNumber: 1}
 	conf.PendingTransactions = make(map[int32]*common.TxnRequest)
 	conf.ExecuteSignal = make(chan struct{}, 1000)

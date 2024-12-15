@@ -19,18 +19,18 @@ func (s *Server) UpdateServerState(ctx context.Context, req *common.UpdateServer
 	fmt.Printf("isAlive set to %t\n", req.IsAlive)
 	s.Config.IsAlive = req.IsAlive
 	s.Config.IsByzantine = req.IsByzantine
-	s.Config.ClusterNumber = req.ClusterNumber
-	s.Config.DataItemsPerShard = req.DataItemsPerShard
+	//s.Config.ClusterNumber = req.ClusterNumber
+	//s.Config.DataItemsPerShard = req.DataItemsPerShard
 
-	for key, cluster := range req.Clusters {
-		s.Config.MapClusterToServers[key] = cluster.Values
-	}
+	//for key, cluster := range req.Clusters {
+	//	s.Config.MapClusterToServers[key] = cluster.Values
+	//}
 	return nil, nil
 }
 
 func (s *Server) ProcessTxn(ctx context.Context, req *common.TxnRequest) (*emptypb.Empty, error) {
 	go func() {
-		err := logic.ProcessTxn(ctx, s.Config, req)
+		err := logic.ProcessTxn(ctx, s.Config, req, false)
 		if err != nil {
 			log.Printf("ProcessTxnError: %v\n", err)
 		}

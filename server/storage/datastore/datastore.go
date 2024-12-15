@@ -167,3 +167,45 @@ func GetPBFTMessages(db *sql.DB, txnID, messagesType string) ([]*common.PBFTMess
 	}
 	return messages, nil
 }
+
+func GetPendingTransactions(db *sql.DB) ([]*common.TxnRequest, error) {
+	var transactions []*common.TxnRequest
+	var createdAt time.Time
+
+	query := `SELECT txn_id, sender, receiver, amount, seq_no, view_no, type, status, digest, error, created_at FROM transaction WHERE status in ('Init', 'Pre-Prepared','Prepared') ORDER BY seq_no`
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var txn common.TxnRequest
+		if err = rows.Scan(&txn.TxnID, &txn.Sender, &txn.Receiver, &txn.Amount, &txn.SeqNo, &txn.ViewNo,
+			&txn.Type, &txn.Status, &txn.Digest, &txn.Error, &createdAt); err != nil {
+			return nil, err
+		}
+		txn.CreatedAt = timestamppb.New(createdAt)
+		transactions = append(transactions, &txn)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return transactions, nil
+}
+
+func DeletePBFTMessagesByByTxnID(db *sql.DB, txnID string) (int64, error) {
+	query := `DELETE FROM PBFT_Messages WHERE txn_id = ?`
+
+	res, err := db.Exec(query, txnID)
+	if err != nil {
+		return 0, err
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+
+	return rowsAffected, nil
+}

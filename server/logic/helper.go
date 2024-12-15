@@ -165,9 +165,11 @@ func AcquireLock(conf *config.Config, req *common.TxnRequest) {
 	if req.Type == TypeIntraShard || req.Type == TypeCrossShardSender {
 		conf.UserLocks[req.Sender%conf.DataItemsPerShard].Lock()
 	}
+	fmt.Printf("acquired lock for sender %d\n", req.Sender)
 	if req.Type == TypeIntraShard || req.Type == TypeCrossShardReceiver {
 		conf.UserLocks[req.Receiver%conf.DataItemsPerShard].Lock()
 	}
+	fmt.Printf("acquired lock for receiver %d\n", req.Receiver)
 }
 
 func ReleaseLock(conf *config.Config, req *common.TxnRequest) {

@@ -40,7 +40,7 @@ func ReceiveTwoPCPrepareRequest(ctx context.Context, conf *config.Config, req *c
 		return nil
 	}
 
-	err = ProcessTxn(ctx, conf, txnReq)
+	err = ProcessTxn(ctx, conf, txnReq, false)
 	if err != nil {
 		return err
 	}

@@ -19,6 +19,7 @@ func main() {
 	config.InitiateConfig(conf)
 
 	go logic.WorkerProcess(conf)
+	go logic.RetryCron(conf)
 
 	ListenAndServe(conf)
 }
