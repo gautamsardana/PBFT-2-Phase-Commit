@@ -131,6 +131,7 @@ func ReceivePrePrepare(ctx context.Context, conf *config.Config, req *common.PBF
 
 		err = ValidateBalance(conf, txnReq)
 		if err != nil {
+			ReleaseLock(conf, txnReq)
 			return nil, err
 		}
 	} else {

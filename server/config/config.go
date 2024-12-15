@@ -48,7 +48,7 @@ type Config struct {
 	TwoPCLock  sync.Mutex
 	UserLocks  []sync.Mutex
 	TwoPCTimer map[string]*time.Timer
-	TwoPCChan  map[string]chan struct{}
+	TwoPCChan  map[string]chan *common.PBFTRequestResponse
 }
 
 func InitiateConfig(conf *Config) {
@@ -61,7 +61,7 @@ func InitiateConfig(conf *Config) {
 	conf.PendingTransactions = make(map[int32]*common.TxnRequest)
 	conf.ExecuteSignal = make(chan struct{}, 1000)
 	conf.TwoPCTimer = make(map[string]*time.Timer)
-	conf.TwoPCChan = make(map[string]chan struct{})
+	conf.TwoPCChan = make(map[string]chan *common.PBFTRequestResponse)
 	conf.UserLocks = make([]sync.Mutex, conf.DataItemsPerShard)
 }
 

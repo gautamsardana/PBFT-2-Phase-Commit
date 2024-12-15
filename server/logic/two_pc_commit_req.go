@@ -39,24 +39,48 @@ func ReceiveTwoPCCommit(ctx context.Context, conf *config.Config, req *common.PB
 		return nil
 	}
 
-	err = StartConsensus(conf, dbTxn, req.Outcome)
-	if err != nil {
-		return err
-	}
-
-	if req.Outcome == OutcomeCommit {
-		err = TwoPCCommit(ctx, conf, dbTxn)
-		if err != nil {
-			return err
-		}
-	} else if req.Outcome == OutcomeAbort {
-		err = TwoPCAbort(ctx, conf, dbTxn)
-		if err != nil {
-			return err
-		}
-	}
-
-	SendReplyToClient(conf, dbTxn)
+	conf.TwoPCChan[txnReq.TxnID] <- req
 
 	return nil
+
+}
+
+func WaitForCoordinatorResponse(conf *config.Config, txnReq *common.TxnRequest) {
+	select {
+	case <-conf.TwoPCTimer[txnReq.TxnID].C:
+		fmt.Printf("no response from coordinator cluster, outcome = abort\n")
+		ProcessTwoPCCommit(context.Background(), conf, txnReq, OutcomeAbort)
+		return
+	case resp := <-conf.TwoPCChan[txnReq.TxnID]:
+		conf.TwoPCTimer[txnReq.TxnID].Stop()
+		if resp.Outcome == OutcomeCommit {
+			fmt.Printf("got response from participant cluster, outcome = commit\n")
+			ProcessTwoPCCommit(context.Background(), conf, txnReq, OutcomeCommit)
+		} else if resp.Outcome == OutcomeAbort {
+			fmt.Printf("got response from participant cluster,  outcome = abort\n")
+			ProcessTwoPCCommit(context.Background(), conf, txnReq, OutcomeAbort)
+		}
+		return
+	}
+}
+
+func ProcessTwoPCCommit(ctx context.Context, conf *config.Config, txnReq *common.TxnRequest, outcome string) {
+	err := StartConsensus(conf, txnReq, outcome)
+	if err != nil {
+		fmt.Printf("failed to start consensus cluster: %v\n", err)
+	}
+
+	if outcome == OutcomeCommit {
+		err = TwoPCCommit(ctx, conf, txnReq)
+		if err != nil {
+			fmt.Printf("TwoPC commit failed: %v\n", err)
+		}
+	} else if outcome == OutcomeAbort {
+		err = TwoPCAbort(ctx, conf, txnReq)
+		if err != nil {
+			fmt.Printf("TwoPC abort failed: %v\n", err)
+		}
+	}
+
+	SendReplyToClient(conf, txnReq)
 }

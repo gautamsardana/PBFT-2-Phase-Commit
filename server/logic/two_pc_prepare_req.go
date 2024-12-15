@@ -11,7 +11,10 @@ import (
 	"fmt"
 	"math"
 	"sync"
+	"time"
 )
+
+// participant nodes get 2pc request from leader
 
 func ReceiveTwoPCPrepareRequest(ctx context.Context, conf *config.Config, req *common.PBFTRequestResponse) error {
 	serverAddr := config.MapServerNumberToAddress[req.ServerNo]
@@ -47,6 +50,8 @@ func ReceiveTwoPCPrepareRequest(ctx context.Context, conf *config.Config, req *c
 	}
 	return nil
 }
+
+// participant leader sends 2pc prepare response to coordinator nodes
 
 func SendTwoPCPrepareResponse(conf *config.Config, req *common.TxnRequest) error {
 	commitMessages, err := datastore.GetPBFTMessages(conf.DataStore, req.TxnID, MessageTypeCommit)
@@ -87,6 +92,12 @@ func SendTwoPCPrepareResponse(conf *config.Config, req *common.TxnRequest) error
 	}
 
 	fmt.Printf("sending response to coordinator cluster for txn: %s\n", dbTxn.TxnID)
+
+	conf.TwoPCLock.Lock()
+	conf.TwoPCTimer[req.TxnID] = time.NewTimer(5 * time.Second)
+	conf.TwoPCChan[req.TxnID] = make(chan *common.PBFTRequestResponse)
+	conf.TwoPCLock.Unlock()
+	go WaitForCoordinatorResponse(conf, req)
 
 	senderCluster := math.Ceil(float64(req.Sender) / float64(conf.DataItemsPerShard))
 

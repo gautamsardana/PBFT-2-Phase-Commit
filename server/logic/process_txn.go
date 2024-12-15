@@ -118,7 +118,7 @@ func StartTwoPC(conf *config.Config, req *common.TxnRequest) error {
 
 	conf.TwoPCLock.Lock()
 	conf.TwoPCTimer[req.TxnID] = time.NewTimer(5 * time.Second)
-	conf.TwoPCChan[req.TxnID] = make(chan struct{})
+	conf.TwoPCChan[req.TxnID] = make(chan *common.PBFTRequestResponse)
 	conf.TwoPCLock.Unlock()
 	go WaitForParticipantResponse(conf, req)
 

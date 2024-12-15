@@ -10,16 +10,16 @@ import (
 	"sync"
 )
 
-func ReceiveTwoPCPrepareResponse(ctx context.Context, conf *config.Config, req *common.PBFTRequestResponse) error {
+func ReceiveTwoPCPrepareResponse(ctx context.Context, conf *config.Config, resp *common.PBFTRequestResponse) error {
 	txnReq := &common.TxnRequest{}
-	err := json.Unmarshal(req.TxnRequest, txnReq)
+	err := json.Unmarshal(resp.TxnRequest, txnReq)
 	if err != nil {
 		return err
 	}
 
 	fmt.Printf("received response from participant cluster for txn: %s\n", txnReq.TxnID)
 
-	err = VerifyTwoPCMessages(conf, req, MessageTypeTwoPCPrepareFromParticipant)
+	err = VerifyTwoPCMessages(conf, resp, MessageTypeTwoPCPrepareFromParticipant)
 	if err != nil {
 		return err
 	}
@@ -28,9 +28,7 @@ func ReceiveTwoPCPrepareResponse(ctx context.Context, conf *config.Config, req *
 		return nil
 	}
 
-	conf.TwoPCLock.Lock()
-	conf.TwoPCChan[txnReq.TxnID] <- struct{}{}
-	conf.TwoPCLock.Unlock()
+	conf.TwoPCChan[txnReq.TxnID] <- resp
 
 	return nil
 }
@@ -38,13 +36,19 @@ func ReceiveTwoPCPrepareResponse(ctx context.Context, conf *config.Config, req *
 func WaitForParticipantResponse(conf *config.Config, req *common.TxnRequest) {
 	select {
 	case <-conf.TwoPCTimer[req.TxnID].C:
-		fmt.Printf("outcome = abort\n")
+		fmt.Printf("no response from participant cluster, outcome = abort\n")
 		ProcessTwoPCPrepareResponse(context.Background(), conf, req, OutcomeAbort)
 		return
-	case <-conf.TwoPCChan[req.TxnID]:
+	case resp := <-conf.TwoPCChan[req.TxnID]:
 		conf.TwoPCTimer[req.TxnID].Stop()
-		fmt.Printf("outcome = commit\n")
-		ProcessTwoPCPrepareResponse(context.Background(), conf, req, OutcomeCommit)
+
+		if resp.Outcome == OutcomeCommit {
+			fmt.Printf("got response from participant cluster, outcome = commit\n")
+			ProcessTwoPCPrepareResponse(context.Background(), conf, req, OutcomeCommit)
+		} else if resp.Outcome == OutcomeAbort {
+			fmt.Printf("got response from participant cluster,  outcome = abort\n")
+			ProcessTwoPCPrepareResponse(context.Background(), conf, req, OutcomeAbort)
+		}
 		return
 	}
 }
@@ -59,12 +63,12 @@ func ProcessTwoPCPrepareResponse(ctx context.Context, conf *config.Config, txnRe
 		if outcome == OutcomeCommit {
 			err = TwoPCCommit(ctx, conf, txnReq)
 			if err != nil {
-				fmt.Printf("TwoPCCommit failed: %v\n", err)
+				fmt.Printf("TwoPC commit failed: %v\n", err)
 			}
 		} else if outcome == OutcomeAbort {
 			err = TwoPCAbort(ctx, conf, txnReq)
 			if err != nil {
-				fmt.Printf("TwoPCCommit failed: %v\n", err)
+				fmt.Printf("TwoPC abort failed: %v\n", err)
 			}
 		}
 		SendReplyToClient(conf, txnReq)
