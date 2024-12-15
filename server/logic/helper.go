@@ -190,6 +190,15 @@ func UpdateTxnFailed(conf *config.Config, req *common.TxnRequest, err error) {
 	}
 }
 
+func InsertFailedTxn(conf *config.Config, req *common.TxnRequest, err error) {
+	req.Status = StatusFailed
+	req.Error = err.Error()
+	err = datastore.InsertTransaction(conf.DataStore, req)
+	if err != nil {
+		fmt.Println("Update transaction error:", err)
+	}
+}
+
 func SendReplyToClient(conf *config.Config, txn *common.TxnRequest) {
 	dbTxn, err := datastore.GetTransactionByTxnID(conf.DataStore, txn.TxnID)
 	if err != nil {

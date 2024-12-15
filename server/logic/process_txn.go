@@ -25,6 +25,7 @@ func ProcessTxn(ctx context.Context, conf *config.Config, req *common.TxnRequest
 
 	err := ValidateBalance(conf, req)
 	if err != nil {
+		InsertFailedTxn(conf, req, err)
 		ReleaseLock(conf, req)
 		return err
 	}

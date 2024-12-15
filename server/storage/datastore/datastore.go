@@ -61,9 +61,9 @@ func GetTransactionByTxnID(db *sql.DB, txnID string) (*common.TxnRequest, error)
 }
 
 func InsertTransaction(db *sql.DB, transaction *common.TxnRequest) error {
-	query := `INSERT INTO transaction (txn_id, sender, receiver, amount, seq_no, view_no, type, status, digest, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	query := `INSERT INTO transaction (txn_id, sender, receiver, amount, seq_no, view_no, type, status, digest, error, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	_, err := db.Exec(query, transaction.TxnID, transaction.Sender, transaction.Receiver, transaction.Amount,
-		transaction.SeqNo, transaction.ViewNo, transaction.Type, transaction.Status, transaction.Digest, time.Now())
+		transaction.SeqNo, transaction.ViewNo, transaction.Type, transaction.Status, transaction.Digest, transaction.Error, time.Now())
 	if err != nil {
 		return err
 	}
