@@ -19,7 +19,7 @@ func ReceiveTwoPCPrepareResponse(ctx context.Context, conf *config.Config, req *
 
 	fmt.Printf("received response from participant cluster for txn: %s\n", txnReq.TxnID)
 
-	err = AddTwoPCMessages(conf, req, MessageTypeTwoPCPrepareFromParticipant)
+	err = VerifyTwoPCMessages(conf, req, MessageTypeTwoPCPrepareFromParticipant)
 	if err != nil {
 		return err
 	}

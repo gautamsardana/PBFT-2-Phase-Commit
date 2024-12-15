@@ -5,6 +5,7 @@ import (
 	"GolandProjects/2pcbyz-gautamsardana/server/config"
 	"GolandProjects/2pcbyz-gautamsardana/server/storage/datastore"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -31,7 +32,7 @@ func ReceiveTwoPCPrepareRequest(ctx context.Context, conf *config.Config, req *c
 	}
 	fmt.Printf("received TwoPCPrepare from coordinator cluster with request: %v\n", txnReq)
 
-	err = AddTwoPCMessages(conf, req, MessageTypeTwoPCPrepareFromCoordinator)
+	err = VerifyTwoPCMessages(conf, req, MessageTypeTwoPCPrepareFromCoordinator)
 	if err != nil {
 		return err
 	}
@@ -82,6 +83,7 @@ func SendTwoPCPrepareResponse(conf *config.Config, req *common.TxnRequest) error
 		Sign:          sign,
 		TxnRequest:    txnBytes,
 		ServerNo:      conf.ServerNumber,
+		Outcome:       OutcomeCommit,
 	}
 
 	fmt.Printf("sending response to coordinator cluster for txn: %s\n", dbTxn.TxnID)
@@ -109,7 +111,7 @@ func SendTwoPCPrepareResponse(conf *config.Config, req *common.TxnRequest) error
 	return nil
 }
 
-func AddTwoPCMessages(conf *config.Config, req *common.PBFTRequestResponse, messageType string) error {
+func VerifyTwoPCMessages(conf *config.Config, req *common.PBFTRequestResponse, messageType string) error {
 	cert := &common.Certificate{}
 	err := json.Unmarshal(req.SignedMessage, cert)
 	if err != nil {
@@ -120,9 +122,23 @@ func AddTwoPCMessages(conf *config.Config, req *common.PBFTRequestResponse, mess
 		return errors.New("not enough messages")
 	}
 
-	for _, twoPCCommitRequest := range cert.Messages {
-		twoPCCommitRequest.MessageType = messageType
-		err = datastore.InsertPBFTMessage(conf.DataStore, twoPCCommitRequest)
+	for _, commitMessage := range cert.Messages {
+		serverAddr := config.MapServerNumberToAddress[commitMessage.Sender]
+		publicKey, err := conf.PublicKeys.GetPublicKey(serverAddr)
+		if err != nil {
+			return err
+		}
+
+		payload, _ := base64.StdEncoding.DecodeString(commitMessage.Payload)
+		sign, _ := base64.StdEncoding.DecodeString(commitMessage.Sign)
+
+		err = VerifySignature(publicKey, payload, sign)
+		if err != nil {
+			return err
+		}
+
+		commitMessage.MessageType = messageType
+		err = datastore.InsertPBFTMessage(conf.DataStore, commitMessage)
 		if err != nil {
 			return err
 		}
