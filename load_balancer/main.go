@@ -13,7 +13,7 @@ import (
 	common "GolandProjects/2pcbyz-gautamsardana/api_common"
 )
 
-const inputFilePath = "Lab4_Testset_2.csv"
+const inputFilePath = "Lab4_Testset_1.csv"
 
 var sets map[int32]*common.TxnSet
 var totalSets int32
