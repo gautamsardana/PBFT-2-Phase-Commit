@@ -53,7 +53,7 @@ type Byz2PCClient interface {
 	Sync(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*PBFTRequestResponse, error)
 	TwoPCPrepareRequest(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	TwoPCPrepareResponse(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	TwoPCCommitRequest(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	TwoPCCommitRequest(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*PBFTRequestResponse, error)
 	TwoPCCommit(ctx context.Context, in *TxnRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	TwoPCAbort(ctx context.Context, in *TxnRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Performance(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PerformanceResponse, error)
@@ -170,9 +170,9 @@ func (c *byz2PCClient) TwoPCPrepareResponse(ctx context.Context, in *PBFTRequest
 	return out, nil
 }
 
-func (c *byz2PCClient) TwoPCCommitRequest(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *byz2PCClient) TwoPCCommitRequest(ctx context.Context, in *PBFTRequestResponse, opts ...grpc.CallOption) (*PBFTRequestResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
+	out := new(PBFTRequestResponse)
 	err := c.cc.Invoke(ctx, Byz2PC_TwoPCCommitRequest_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -254,7 +254,7 @@ type Byz2PCServer interface {
 	Sync(context.Context, *PBFTRequestResponse) (*PBFTRequestResponse, error)
 	TwoPCPrepareRequest(context.Context, *PBFTRequestResponse) (*emptypb.Empty, error)
 	TwoPCPrepareResponse(context.Context, *PBFTRequestResponse) (*emptypb.Empty, error)
-	TwoPCCommitRequest(context.Context, *PBFTRequestResponse) (*emptypb.Empty, error)
+	TwoPCCommitRequest(context.Context, *PBFTRequestResponse) (*PBFTRequestResponse, error)
 	TwoPCCommit(context.Context, *TxnRequest) (*emptypb.Empty, error)
 	TwoPCAbort(context.Context, *TxnRequest) (*emptypb.Empty, error)
 	Performance(context.Context, *emptypb.Empty) (*PerformanceResponse, error)
@@ -301,7 +301,7 @@ func (UnimplementedByz2PCServer) TwoPCPrepareRequest(context.Context, *PBFTReque
 func (UnimplementedByz2PCServer) TwoPCPrepareResponse(context.Context, *PBFTRequestResponse) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TwoPCPrepareResponse not implemented")
 }
-func (UnimplementedByz2PCServer) TwoPCCommitRequest(context.Context, *PBFTRequestResponse) (*emptypb.Empty, error) {
+func (UnimplementedByz2PCServer) TwoPCCommitRequest(context.Context, *PBFTRequestResponse) (*PBFTRequestResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TwoPCCommitRequest not implemented")
 }
 func (UnimplementedByz2PCServer) TwoPCCommit(context.Context, *TxnRequest) (*emptypb.Empty, error) {

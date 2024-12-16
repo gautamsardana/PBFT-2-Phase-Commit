@@ -10,39 +10,51 @@ import (
 	"GolandProjects/2pcbyz-gautamsardana/server/storage/datastore"
 )
 
-func ReceiveTwoPCCommit(ctx context.Context, conf *config.Config, req *common.PBFTRequestResponse) error {
+func ReceiveTwoPCCommit(ctx context.Context, conf *config.Config, req *common.PBFTRequestResponse) (*common.PBFTRequestResponse, error) {
 	serverAddr := config.MapServerNumberToAddress[req.ServerNo]
 	publicKey, err := conf.PublicKeys.GetPublicKey(serverAddr)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = VerifySignature(publicKey, req.SignedMessage, req.Sign)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	txnReq := &common.TxnRequest{}
 	err = json.Unmarshal(req.SignedMessage, txnReq)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	dbTxn, err := datastore.GetTransactionByTxnID(conf.DataStore, txnReq.TxnID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	fmt.Printf("received TwoPCCommit from coordinator cluster with request: %v\n", dbTxn)
 
-	if GetLeaderNumber(conf, conf.ClusterNumber) != conf.ServerNumber {
-		return nil
+	txnBytes, err := json.Marshal(dbTxn)
+	if err != nil {
+		return nil, err
+	}
+	sign, err := SignMessage(conf.PrivateKey, txnBytes)
+	if err != nil {
+		return nil, err
 	}
 
-	conf.TwoPCChan[txnReq.TxnID] <- req
+	resp := &common.PBFTRequestResponse{
+		SignedMessage: txnBytes,
+		Sign:          sign,
+		ServerNo:      conf.ServerNumber,
+	}
 
-	return nil
+	if GetLeaderNumber(conf, conf.ClusterNumber) == conf.ServerNumber {
+		conf.TwoPCChan[txnReq.TxnID] <- req
+	}
 
+	return resp, nil
 }
 
 func WaitForCoordinatorResponse(conf *config.Config, txnReq *common.TxnRequest) {

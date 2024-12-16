@@ -104,11 +104,22 @@ func ProcessTwoPCPrepareResponse(ctx context.Context, conf *config.Config, txnRe
 			if err != nil {
 				fmt.Println(err)
 			}
-			_, err = server.TwoPCCommitRequest(context.Background(), twoPCCommitReq)
+			resp, err := server.TwoPCCommitRequest(context.Background(), twoPCCommitReq)
 			if err != nil {
 				fmt.Println(err)
 			}
+			if resp != nil {
+				serverAddr := config.MapServerNumberToAddress[resp.ServerNo]
+				publicKey, err := conf.PublicKeys.GetPublicKey(serverAddr)
+				if err != nil {
+					fmt.Println(err)
+				}
 
+				err = VerifySignature(publicKey, resp.SignedMessage, resp.Sign)
+				if err != nil {
+					fmt.Println(err)
+				}
+			}
 		}(config.MapServerNumberToAddress[serverNo])
 	}
 	wg.Wait()

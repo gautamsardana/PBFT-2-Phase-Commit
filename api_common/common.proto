@@ -22,7 +22,7 @@ service Byz2PC {
 
   rpc TwoPCPrepareRequest(common.PBFTRequestResponse) returns (google.protobuf.Empty);
   rpc TwoPCPrepareResponse(common.PBFTRequestResponse) returns (google.protobuf.Empty);
-  rpc TwoPCCommitRequest(common.PBFTRequestResponse) returns (google.protobuf.Empty);
+  rpc TwoPCCommitRequest(common.PBFTRequestResponse) returns (common.PBFTRequestResponse);
   rpc TwoPCCommit(common.TxnRequest) returns (google.protobuf.Empty);
   rpc TwoPCAbort(common.TxnRequest) returns (google.protobuf.Empty);
 
